@@ -1,0 +1,7 @@
+PassengerAppRoot /home/u492425110/domains/barmagly.tech/qena-nodejs
+PassengerAppType node
+PassengerNodejs /opt/alt/alt-nodejs22/root/bin/node
+PassengerStartupFile server.js
+PassengerBaseURI /api
+PassengerRestartDir /home/u492425110/domains/barmagly.tech/qena-nodejs/tmp
+SetEnv NODE_ENV=production

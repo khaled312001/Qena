@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply font-sans bg-slate-50 text-slate-800 antialiased;
+  font-feature-settings: 'cv02', 'cv03';
+}
+
+* { -webkit-tap-highlight-color: transparent; }
+
+@layer components {
+  .container-p { @apply container mx-auto px-4 sm:px-6 lg:px-8; }
+  .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 active:scale-[0.98]; }
+  .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700 shadow-card; }
+  .btn-outline { @apply btn border border-slate-200 bg-white hover:bg-slate-50 text-slate-800; }
+  .btn-ghost { @apply btn hover:bg-slate-100 text-slate-700; }
+  .card { @apply bg-white rounded-2xl shadow-card border border-slate-100; }
+  .input { @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition; }
+  .chip { @apply inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700; }
+  .tag-emergency { @apply inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-100; }
+}
+
+/* Leaflet RTL fix */
+.leaflet-container { direction: ltr; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
