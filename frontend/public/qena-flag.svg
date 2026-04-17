@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80" fill="none">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#0ea5e9"/>
+      <stop offset="1" stop-color="#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="land" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#16a34a"/>
+      <stop offset="1" stop-color="#14532d"/>
+    </linearGradient>
+  </defs>
+  <!-- Flag background: Nile blue top, desert gold middle, green bottom -->
+  <rect x="0" y="0" width="120" height="30" fill="url(#sky)"/>
+  <rect x="0" y="30" width="120" height="25" fill="url(#land)"/>
+  <rect x="0" y="55" width="120" height="25" fill="url(#green)"/>
+  <!-- Nile wave -->
+  <path d="M0 30 Q15 26 30 30 T60 30 T90 30 T120 30 V34 H0 Z" fill="#bae6fd" opacity="0.6"/>
+  <!-- Sun -->
+  <circle cx="60" cy="40" r="8" fill="#fff" opacity="0.95"/>
+  <circle cx="60" cy="40" r="6" fill="#fde047"/>
+  <!-- Palm tree silhouette (Qena is known for palms) -->
+  <g transform="translate(60 55)">
+    <path d="M0 -2 C-2 -8 -6 -10 -10 -10 C-6 -8 -4 -4 -2 -2 Z" fill="#0f5132"/>
+    <path d="M0 -2 C2 -8 6 -10 10 -10 C6 -8 4 -4 2 -2 Z" fill="#0f5132"/>
+    <path d="M0 -2 C-2 -10 0 -16 0 -16 C2 -12 2 -6 2 -2 Z" fill="#0f5132"/>
+    <rect x="-1" y="-2" width="2" height="10" fill="#7c2d12"/>
+  </g>
+  <!-- Frame -->
+  <rect x="0.5" y="0.5" width="119" height="79" fill="none" stroke="#0c4a6e" stroke-width="1" rx="2"/>
+</svg>

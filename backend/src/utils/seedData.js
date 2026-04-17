@@ -15,6 +15,7 @@ const categories = [
   { slug: 'education', name: 'تعليم وجامعات', icon: 'GraduationCap', color: '#2563eb', sort_order: 10, description: 'جامعات ومدارس ومعاهد' },
   { slug: 'banks', name: 'بنوك', icon: 'Landmark', color: '#059669', sort_order: 11, description: 'فروع البنوك في محافظة قنا' },
   { slug: 'gas-stations', name: 'محطات وقود', icon: 'Fuel', color: '#64748b', sort_order: 12, description: 'محطات تعبئة الوقود' },
+  { slug: 'tourism', name: 'أماكن سياحية', icon: 'Landmark', color: '#b45309', sort_order: 13, description: 'معابد دندرة ونقادة وباقي معالم قنا الأثرية والسياحية' },
 ];
 
 const services = [

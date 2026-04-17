@@ -1,13 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <defs>
-    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0" stop-color="#0ea5e9" />
-      <stop offset="1" stop-color="#0c4a6e" />
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#075985"/>
+      <stop offset="1" stop-color="#0c4a6e"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fbbf24"/>
+      <stop offset="1" stop-color="#d97706"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="14" fill="url(#g)" />
-  <path d="M32 12 L44 26 L32 40 L20 26 Z" fill="#fff" opacity="0.95"/>
-  <circle cx="32" cy="26" r="4" fill="#0284c7" />
-  <path d="M32 40 L32 52" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-  <circle cx="32" cy="52" r="2" fill="#fff" />
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <!-- Gateway arch -->
+  <path d="M14 48 V28 A18 18 0 0 1 50 28 V48" stroke="url(#gold)" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+  <path d="M18 48 V30 A14 14 0 0 1 46 30 V48" fill="#0b3a55" opacity="0.55"/>
+  <!-- Sun inside the arch -->
+  <circle cx="32" cy="26" r="5.5" fill="url(#gold)"/>
+  <g stroke="url(#gold)" stroke-width="1.6" stroke-linecap="round">
+    <path d="M32 13 V18"/>
+    <path d="M32 34 V39"/>
+    <path d="M19 26 H24"/>
+    <path d="M40 26 H45"/>
+    <path d="M22.5 16.5 L25.8 19.8"/>
+    <path d="M38.2 32.2 L41.5 35.5"/>
+    <path d="M41.5 16.5 L38.2 19.8"/>
+    <path d="M25.8 32.2 L22.5 35.5"/>
+  </g>
+  <!-- Nile wave under the gate -->
+  <path d="M12 52 Q20 48 28 52 T44 52 T56 52" stroke="#38bdf8" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M12 56 Q20 52 28 56 T44 56 T56 56" stroke="#7dd3fc" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.8"/>
 </svg>

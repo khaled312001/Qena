@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400" fill="none">
+  <defs>
+    <pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="20" cy="20" r="1" fill="white" opacity="0.2"/>
+    </pattern>
+  </defs>
+  <rect width="600" height="400" fill="url(#dots)"/>
+  <!-- Pharaonic silhouettes -->
+  <g opacity="0.08" fill="white">
+    <path d="M40 360 L40 220 L50 220 L50 200 Q50 180 70 180 Q90 180 90 200 L90 220 L100 220 L100 360 Z"/>
+    <path d="M530 360 L530 210 L540 210 L540 195 Q540 175 560 175 Q580 175 580 195 L580 210 L590 210 L590 360 Z"/>
+    <!-- Pyramid -->
+    <path d="M200 360 L260 240 L320 360 Z"/>
+    <path d="M420 360 L470 260 L520 360 Z" opacity="0.5"/>
+  </g>
+</svg>

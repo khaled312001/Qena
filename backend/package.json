@@ -8,6 +8,7 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "seed": "node src/utils/seed.js",
+    "mergeOsm": "node src/utils/mergeOsm.js",
     "createAdmin": "node src/utils/createAdmin.js"
   },
   "engines": {

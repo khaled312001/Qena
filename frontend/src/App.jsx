@@ -7,6 +7,7 @@ import ServiceDetail from './pages/ServiceDetail.jsx';
 import SubmitService from './pages/SubmitService.jsx';
 import PublicNumbersPage from './pages/PublicNumbersPage.jsx';
 import About from './pages/About.jsx';
+import QenaAbout from './pages/QenaAbout.jsx';
 import NotFound from './pages/NotFound.jsx';
 import AdminLogin from './pages/admin/AdminLogin.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/submit" element={<SubmitService />} />
         <Route path="/numbers" element={<PublicNumbersPage />} />
         <Route path="/about" element={<About />} />
+        <Route path="/qena" element={<QenaAbout />} />
         <Route path="*" element={<NotFound />} />
       </Route>
 
