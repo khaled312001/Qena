@@ -55,7 +55,10 @@ export default function About() {
                   <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-brand-700">
                     <Phone className="w-4 h-4" />
                   </div>
-                  <a href="tel:01010254819" dir="ltr" className="hover:text-brand-700 font-bold text-base">01010254819</a>
+                  <div className="flex flex-col">
+                    <span className="text-[11px] text-slate-500">شركة برمجلي — الرقم الرسمي</span>
+                    <a href="tel:01010254819" dir="ltr" className="hover:text-brand-700 font-bold text-base">01010254819</a>
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-brand-700">
@@ -64,12 +67,40 @@ export default function About() {
                   <a href="https://barmagly.tech/" target="_blank" rel="noreferrer" className="hover:text-brand-700 font-bold">barmagly.tech</a>
                 </div>
               </dl>
+
+              {/* Founders direct call buttons */}
+              <div className="mt-6 pt-5 border-t border-slate-100">
+                <div className="text-xs font-semibold text-slate-500 mb-3">اتصال مباشر بالمؤسسين</div>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  <a href="tel:+201060049287" dir="ltr"
+                     className="flex items-center gap-3 bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 transition rounded-xl p-3 group">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white flex items-center justify-center transition shrink-0">
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <div className="text-right flex-1 min-w-0" dir="rtl">
+                      <div className="text-xs text-slate-500">م. أحمد كمال</div>
+                      <div dir="ltr" className="font-bold text-slate-800 text-sm">+20 10 6004 9287</div>
+                    </div>
+                  </a>
+                  <a href="tel:+201204593124" dir="ltr"
+                     className="flex items-center gap-3 bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 transition rounded-xl p-3 group">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white flex items-center justify-center transition shrink-0">
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <div className="text-right flex-1 min-w-0" dir="rtl">
+                      <div className="text-xs text-slate-500">م. خالد أحمد</div>
+                      <div dir="ltr" className="font-bold text-slate-800 text-sm">+20 12 0459 3124</div>
+                    </div>
+                  </a>
+                </div>
+              </div>
+
               <div className="mt-6 flex flex-wrap gap-2">
                 <a href="https://barmagly.tech/" target="_blank" rel="noreferrer" className="btn-primary">
                   <Globe className="w-4 h-4" /> زيارة موقعنا
                 </a>
                 <a href="tel:01010254819" className="btn-outline">
-                  <Phone className="w-4 h-4" /> اتصل بنا
+                  <Phone className="w-4 h-4" /> اتصل بشركة برمجلي
                 </a>
               </div>
             </div>

@@ -101,10 +101,23 @@ export default function PublicLayout() {
                     </NavLink>
                   ))}
                 </div>
-                <a href="tel:01010254819" dir="ltr"
-                   className="mt-6 btn bg-emerald-500 text-white hover:bg-emerald-600 w-full justify-center">
-                  <Phone className="w-4 h-4" /> 01010254819
-                </a>
+                <div className="mt-6 pt-4 border-t border-slate-100">
+                  <div className="text-xs text-slate-500 mb-2 text-center font-semibold">تواصل مع شركة برمجلي</div>
+                  <div className="grid gap-2">
+                    <a href="tel:01010254819" dir="ltr"
+                       className="btn bg-amber-500 text-slate-900 hover:bg-amber-400 w-full justify-center font-bold">
+                      <Phone className="w-4 h-4" /> شركة برمجلي · 01010254819
+                    </a>
+                    <a href="tel:+201060049287" dir="ltr"
+                       className="btn bg-emerald-600 text-white hover:bg-emerald-500 w-full justify-center">
+                      <Phone className="w-4 h-4" /> م. أحمد كمال · +20 10 6004 9287
+                    </a>
+                    <a href="tel:+201204593124" dir="ltr"
+                       className="btn bg-emerald-600 text-white hover:bg-emerald-500 w-full justify-center">
+                      <Phone className="w-4 h-4" /> م. خالد أحمد · +20 12 0459 3124
+                    </a>
+                  </div>
+                </div>
               </motion.aside>
             </motion.div>
           )}
@@ -164,10 +177,28 @@ export default function PublicLayout() {
                className="text-white font-bold hover:text-brand-300 transition">
               شركة برمجلي
             </a>
-            <div className="text-sm text-slate-400 mt-2 leading-7">
-              م. أحمد كمال<br/>
-              م. خالد أحمد<br/>
-              <a href="tel:01010254819" dir="ltr" className="hover:text-white">01010254819</a>
+            <div className="mt-3 space-y-2">
+              <a href="tel:01010254819" dir="ltr"
+                 className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-900 text-xs font-bold px-3 py-2 rounded-lg transition w-full justify-center shadow-sm">
+                <Phone className="w-3.5 h-3.5" />
+                <span>شركة برمجلي · 01010254819</span>
+              </a>
+              <div>
+                <div className="text-[11px] text-slate-400 mb-1">م. أحمد كمال — مؤسس</div>
+                <a href="tel:+201060049287" dir="ltr"
+                   className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition w-full justify-center shadow-sm">
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>+20 10 6004 9287</span>
+                </a>
+              </div>
+              <div>
+                <div className="text-[11px] text-slate-400 mb-1">م. خالد أحمد — مؤسس</div>
+                <a href="tel:+201204593124" dir="ltr"
+                   className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition w-full justify-center shadow-sm">
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>+20 12 0459 3124</span>
+                </a>
+              </div>
             </div>
           </div>
         </div>
