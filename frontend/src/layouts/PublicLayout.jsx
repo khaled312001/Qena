@@ -16,6 +16,20 @@ export default function PublicLayout() {
   const [open, setOpen] = useState(false);
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Barmagly attribution bar */}
+      <div className="bg-gradient-to-l from-brand-900 via-brand-800 to-brand-900 text-white text-xs">
+        <div className="container-p flex items-center justify-between h-9 gap-3">
+          <div className="flex items-center gap-2 truncate">
+            <span className="hidden sm:inline">🎁 خدمة مجانية لكل سكان محافظة قنا — مقدمة من</span>
+            <span className="sm:hidden">🎁 مجاناً من</span>
+            <a href="https://barmagly.tech/" target="_blank" rel="noreferrer"
+               className="font-bold hover:text-amber-300 transition">شركة برمجلي</a>
+          </div>
+          <a href="tel:01010254819" dir="ltr" className="hidden sm:inline-flex items-center gap-1 hover:text-amber-300 transition">
+            <Phone className="w-3 h-3" /> 01010254819
+          </a>
+        </div>
+      </div>
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100">
         <div className="container-p flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2.5 group">
@@ -23,7 +37,7 @@ export default function PublicLayout() {
             <div className="leading-tight">
               <div className="font-extrabold text-slate-900 text-lg">بوابة قنا</div>
               <div className="text-[11px] text-slate-500 flex items-center gap-1">
-                <img src="/qena-flag.svg" className="w-4 h-2.5 rounded-[1px]" alt="" />
+                <img src="/qena-coat.jpg" className="w-4 h-4 rounded-[2px] object-cover" alt="" />
                 عروس الصعيد · مجاناً
               </div>
             </div>
@@ -79,6 +93,19 @@ export default function PublicLayout() {
       </main>
 
       <footer className="bg-gradient-to-b from-slate-900 to-slate-950 text-slate-300 mt-12">
+        {/* Barmagly highlight banner inside footer */}
+        <div className="bg-gradient-to-l from-amber-500 via-amber-600 to-amber-500 text-slate-900">
+          <div className="container-p py-4 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-right">
+            <div className="font-bold text-sm md:text-base">
+              🎁 هذا الموقع مجاني بالكامل — مصمم ومقدم من{' '}
+              <a href="https://barmagly.tech/" target="_blank" rel="noreferrer" className="underline decoration-dotted hover:text-amber-900">شركة برمجلي</a>{' '}
+              هدية لسكان محافظة قنا
+            </div>
+            <a href="tel:01010254819" dir="ltr" className="inline-flex items-center gap-2 bg-slate-900 text-amber-300 px-4 py-1.5 rounded-full font-bold hover:bg-slate-800 transition whitespace-nowrap">
+              <Phone className="w-4 h-4" /> 01010254819
+            </a>
+          </div>
+        </div>
         <div className="container-p py-12 grid md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-3">
@@ -86,13 +113,14 @@ export default function PublicLayout() {
               <div>
                 <div className="text-white font-extrabold text-xl">بوابة قنا</div>
                 <div className="text-xs text-brand-300 flex items-center gap-1 mt-0.5">
-                  <img src="/qena-flag.svg" className="w-4 h-2.5 rounded-[1px]" alt="" />
+                  <img src="/qena-coat.jpg" className="w-4 h-4 rounded-[2px] object-cover" alt="" />
                   عروس الصعيد · Qena Gateway
                 </div>
               </div>
             </div>
             <p className="text-sm leading-7 text-slate-400">
-              مبادرة خيرية مجانية تجمع كل الخدمات والأرقام المهمة التي يحتاجها المواطن في محافظة قنا — مستشفيات، فنادق، مطاعم، أرقام طوارئ، ومعالم سياحية — في مكان واحد.
+              مبادرة خيرية مجانية تجمع كل الخدمات والأرقام المهمة التي يحتاجها المواطن في محافظة قنا — مستشفيات، فنادق، مطاعم، أرقام طوارئ، ومعالم سياحية — في مكان واحد. مصممة ومقدمة مجاناً من{' '}
+              <a href="https://barmagly.tech/" target="_blank" rel="noreferrer" className="text-amber-300 hover:text-amber-200 font-semibold">شركة برمجلي</a>.
             </p>
           </div>
           <div>

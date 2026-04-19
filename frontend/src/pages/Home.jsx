@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, Phone, Plus, ChevronLeft, Star, MapPin, Scroll, Sparkles } from 'lucide-react';
+import { Phone, Plus, ChevronLeft, Scroll, Sparkles } from 'lucide-react';
 import api from '../lib/api.js';
 import { Icon } from '../lib/icons.jsx';
 import ServiceCard from '../components/ServiceCard.jsx';
 import EmergencyStrip from '../components/EmergencyStrip.jsx';
+import SearchBox from '../components/SearchBox.jsx';
 
 export default function Home() {
-  const nav = useNavigate();
   const [categories, setCategories] = useState([]);
   const [featured, setFeatured] = useState([]);
-  const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
 
@@ -26,11 +25,6 @@ export default function Home() {
       setStats({ services: total, categories: c.data.length });
     }).finally(() => setLoading(false));
   }, []);
-
-  function search(e) {
-    e.preventDefault();
-    if (q.trim()) nav(`/category/all?q=${encodeURIComponent(q)}`);
-  }
 
   return (
     <div>
@@ -58,14 +52,9 @@ export default function Home() {
               <p className="text-white/90 text-base md:text-lg leading-8 max-w-xl">
                 دليل مجاني شامل لكل الخدمات في قنا — مستشفيات، فنادق، مطاعم، كافيهات، محلات، بنوك، أرقام طوارئ، ومعالم سياحية — بإحداثيات دقيقة على الخريطة.
               </p>
-              <form onSubmit={search}
-                className="mt-7 flex items-center gap-2 bg-white rounded-2xl p-2 shadow-2xl max-w-xl">
-                <Search className="w-5 h-5 text-slate-400 mr-2" />
-                <input value={q} onChange={(e) => setQ(e.target.value)}
-                  className="flex-1 bg-transparent outline-none text-slate-800 placeholder:text-slate-400 px-1"
-                  placeholder="ابحث عن مستشفى، فندق، صيدلية..." />
-                <button type="submit" className="btn-primary">بحث</button>
-              </form>
+              <div className="mt-7">
+                <SearchBox />
+              </div>
               <div className="mt-6 flex flex-wrap items-center gap-2">
                 <Link to="/numbers" className="btn bg-white/15 text-white hover:bg-white/25 backdrop-blur border border-white/10">
                   <Phone className="w-4 h-4" /> أرقام مهمة
@@ -89,7 +78,10 @@ export default function Home() {
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
               className="hidden lg:block">
               <div className="relative">
-                <img src="/qena-flag.svg" alt="علم قنا" className="w-full max-w-xs mx-auto rounded-2xl shadow-2xl ring-4 ring-white/20 rotate-[-3deg]" />
+                <div className="w-full max-w-xs mx-auto rounded-2xl shadow-2xl ring-4 ring-white/20 rotate-[-3deg] bg-white p-4">
+                  <img src="/qena-coat.jpg" alt="شعار محافظة قنا الرسمي" className="w-full h-auto rounded-xl" />
+                  <div className="text-center mt-3 text-sky-900 text-sm font-bold">محافظة قنا</div>
+                </div>
                 <img src="/logo.svg" alt="" className="absolute -top-8 -right-8 w-24 h-24 drop-shadow-xl" />
               </div>
             </motion.div>
@@ -140,7 +132,7 @@ export default function Home() {
           <motion.div whileHover={{ y: -2 }}
             className="relative card overflow-hidden p-6 md:p-8 bg-gradient-to-bl from-amber-50 via-white to-brand-50 border-amber-100">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-5">
-              <img src="/qena-flag.svg" className="w-20 h-14 rounded-md shadow ring-2 ring-white" alt="" />
+              <img src="/qena-coat.jpg" className="w-16 h-16 rounded-lg shadow ring-2 ring-white object-cover" alt="شعار قنا" />
               <div className="flex-1">
                 <div className="text-amber-700 text-xs font-semibold mb-1">تعرف على محافظتنا</div>
                 <h3 className="text-xl md:text-2xl font-extrabold text-slate-900 mb-1">قنا — عروس الصعيد</h3>

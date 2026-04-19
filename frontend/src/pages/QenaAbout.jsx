@@ -58,7 +58,7 @@ export default function QenaAbout() {
           style={{ backgroundImage: 'url(/hero-pattern.svg)', backgroundSize: 'cover' }} />
         <div className="container-p relative py-16 md:py-24">
           <div className="flex items-start gap-5 max-w-3xl">
-            <img src="/qena-flag.svg" alt="علم قنا" className="w-20 h-14 md:w-28 md:h-20 rounded-md shadow-lg ring-2 ring-white/20 shrink-0" />
+            <img src="/qena-coat.jpg" alt="شعار محافظة قنا الرسمي" className="w-20 h-20 md:w-28 md:h-28 rounded-xl shadow-lg ring-2 ring-white/20 object-cover shrink-0 bg-white p-1.5" />
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
               <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur px-3 py-1.5 rounded-full text-xs mb-3">
                 <Scroll className="w-4 h-4" /> محافظة قنا · عروس الصعيد
