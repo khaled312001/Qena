@@ -1,0 +1,14 @@
+[
+  { "name": "اتيلية الاسطورة بقنا حوض 10", "rating": 4.1, "reviews": 73, "phone": "01003784990", "address": "حوض 10، قنا", "working_hours": "يغلق 4 م", "tags": "أتيليه,فساتين زفاف,تأجير", "is_featured": true, "city": "قنا" },
+  { "name": "أتيليه ماجيستك لفساتين الأفراح", "rating": 4.4, "reviews": 11, "phone": "01061777128", "address": "شارع الجمهورية، قنا", "tags": "أتيليه,فساتين أفراح", "city": "قنا" },
+  { "name": "اتيلية دانتيلا", "rating": 3.5, "reviews": 4, "phone": "01207695669", "address": "قنا", "tags": "أتيليه,دانتيلا", "city": "قنا" },
+  { "name": "اتيليه مارياج", "rating": 5.0, "reviews": 1, "phone": "01285210003", "address": "قنا", "tags": "أتيليه,Mariage", "city": "قنا" },
+  { "name": "اتيليه مايا", "phone": "01093412855", "address": "قنا", "tags": "أتيليه", "city": "قنا" },
+  { "name": "Paris atelier", "phone": "01000475960", "address": "قنا", "tags": "أتيليه,Paris", "city": "قنا" },
+  { "name": "أتيلية مرمر - MrMr atelier", "rating": 5.0, "reviews": 4, "phone": "01060248803", "address": "نجع حمادي", "tags": "أتيليه,فساتين زفاف", "is_featured": true, "city": "نجع حمادي" },
+  { "name": "اتيليه فرحه", "phone": "01016175452", "address": "قنا", "tags": "أتيليه,فرحة", "city": "قنا" },
+  { "name": "اسطورة للمحجبات - نجع حمادي", "rating": 5.0, "reviews": 1, "phone": "01097494040", "address": "نجع حمادي", "tags": "أتيليه,محجبات", "city": "نجع حمادي" },
+  { "name": "محل ريحانه", "address": "قنا", "tags": "أتيليه,فساتين", "city": "قنا" },
+  { "name": "اتيلية الملكة ستايل", "address": "قنا", "tags": "أتيليه,ملكة", "city": "قنا" },
+  { "name": "Junior Atelier", "address": "قنا", "tags": "أتيليه,أطفال", "city": "قنا" }
+]

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import {
-  Search, ChevronRight, Filter, X, MapPin, SlidersHorizontal,
+  Search, ChevronRight, ChevronDown, Filter, X, MapPin, SlidersHorizontal,
   Phone, CheckCircle2, Star, ArrowUpDown, Grid, List as ListIcon, Info,
+  Layers, Building2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../lib/api.js';
@@ -18,6 +19,33 @@ const SORT_OPTIONS = [
   { v: 'name', l: 'أبجدياً' },
   { v: 'newest', l: 'الأحدث' },
 ];
+
+// Collapsible filter section
+function FilterSection({ title, icon: IconC, count, accent, defaultOpen = true, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const accentBar = accent === 'red' ? 'bg-red-500' : 'bg-brand-500';
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between mb-2 pb-1.5 border-b border-slate-100 hover:border-slate-200 transition group"
+      >
+        <div className="text-[12px] font-bold text-slate-800 flex items-center gap-1.5">
+          {accent ? (
+            <span className={`w-1 h-3.5 rounded-full ${accentBar}`} />
+          ) : IconC ? (
+            <IconC className="w-3.5 h-3.5 text-brand-700" />
+          ) : null}
+          {title}
+          {count != null && <span className="text-slate-400 font-medium">({count})</span>}
+        </div>
+        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${open ? '' : '-rotate-90'}`} />
+      </button>
+      {open && children}
+    </div>
+  );
+}
 
 // Importance score: featured + phone + image + coords + reviews
 function importance(s) {
@@ -246,92 +274,102 @@ export default function CategoryPage() {
   }, [hasFilters, filtered, dbStats]);
 
   const FilterPanel = ({ onClose }) => (
-    <div className="space-y-5">
-      {/* Active filters */}
-      {hasFilters && (
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-semibold text-slate-700">الفلاتر النشطة</div>
-            <button onClick={clearAll} className="text-[11px] text-red-600 hover:text-red-700 flex items-center gap-1">
+    <div className="space-y-4">
+      {/* Summary header with total + active filters badge */}
+      <div className="rounded-xl bg-gradient-to-bl from-brand-50 via-white to-slate-50 border border-slate-100 p-3">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[11px] text-slate-500 font-medium">النتائج المعروضة</span>
+          {hasFilters && (
+            <button onClick={clearAll} className="text-[11px] text-red-600 hover:text-red-700 flex items-center gap-1 font-medium">
               <X className="w-3 h-3" /> مسح الكل
             </button>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {selectedCity && (
-              <span className="inline-flex items-center gap-1 bg-brand-600 text-white text-xs px-2.5 py-1 rounded-full">
-                <MapPin className="w-3 h-3" /> {selectedCity}
-                <button onClick={() => setCity(selectedCity)} className="hover:bg-white/20 rounded-full"><X className="w-3 h-3" /></button>
-              </span>
+          )}
+        </div>
+        <div className="flex items-baseline gap-2">
+          <span className="text-2xl font-black text-brand-700 tabular-nums">{stats.total.toLocaleString('ar-EG')}</span>
+          <span className="text-xs text-slate-500">من أصل {dbStats.total.toLocaleString('ar-EG')}</span>
+        </div>
+        {(stats.withPhone > 0 || stats.withMap > 0) && (
+          <div className="flex gap-2 mt-2 text-[10px]">
+            {stats.withPhone > 0 && (
+              <span className="flex items-center gap-1 text-emerald-700"><Phone className="w-2.5 h-2.5" />{stats.withPhone.toLocaleString('ar-EG')}</span>
             )}
-            {selectedTags.map((t) => (
-              <span key={t} className="inline-flex items-center gap-1 bg-brand-600 text-white text-xs px-2.5 py-1 rounded-full">
-                {t}
-                <button onClick={() => toggleTag(t)} className="hover:bg-white/20 rounded-full"><X className="w-3 h-3" /></button>
-              </span>
-            ))}
+            {stats.withMap > 0 && (
+              <span className="flex items-center gap-1 text-sky-700"><MapPin className="w-2.5 h-2.5" />{stats.withMap.toLocaleString('ar-EG')}</span>
+            )}
           </div>
+        )}
+      </div>
+
+      {/* Active filters chips */}
+      {hasFilters && (
+        <div className="flex flex-wrap gap-1.5">
+          {selectedCity && (
+            <span className="inline-flex items-center gap-1 bg-brand-600 text-white text-[11px] px-2.5 py-1 rounded-full shadow-sm">
+              <MapPin className="w-3 h-3" /> {selectedCity}
+              <button onClick={() => setCity(selectedCity)} className="hover:bg-white/20 rounded-full p-0.5"><X className="w-2.5 h-2.5" /></button>
+            </span>
+          )}
+          {selectedTags.map((t) => (
+            <span key={t} className="inline-flex items-center gap-1 bg-brand-600 text-white text-[11px] px-2.5 py-1 rounded-full shadow-sm">
+              {t}
+              <button onClick={() => toggleTag(t)} className="hover:bg-white/20 rounded-full p-0.5"><X className="w-2.5 h-2.5" /></button>
+            </span>
+          ))}
         </div>
       )}
 
-      {/* Top categories — only on /category/all to let users drill down */}
+      {/* Top categories — only on /category/all */}
       {slug === 'all' && categoriesList.length > 1 && (
-        <div>
-          <div className="text-xs font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
-            <SlidersHorizontal className="w-3.5 h-3.5" /> القسم
-            <span className="text-slate-400 font-normal">({categoriesList.length})</span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
+        <FilterSection title="الأقسام" icon={Layers} count={categoriesList.length} defaultOpen>
+          <div className="space-y-1">
             {categoriesList.map((c) => (
               <Link key={c.slug} to={`/category/${c.slug}`}
-                className="text-xs px-3 py-1.5 rounded-full transition border bg-white hover:bg-brand-50 hover:border-brand-300 border-slate-200 text-slate-700 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color || '#0ea5e9' }} />
-                {c.name} <span className="opacity-50">· {c.count}</span>
+                className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg transition hover:bg-slate-50 group">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: (c.color || '#0ea5e9') + '22', color: c.color || '#0ea5e9' }}>
+                    <Icon name={c.icon} className="w-3.5 h-3.5" />
+                  </span>
+                  <span className="text-[13px] text-slate-700 truncate group-hover:text-brand-700 font-medium">{c.name}</span>
+                </div>
+                <span className="text-[11px] font-semibold text-slate-400 tabular-nums group-hover:text-brand-600">{c.count.toLocaleString('ar-EG')}</span>
               </Link>
             ))}
           </div>
-        </div>
+        </FilterSection>
       )}
 
       {/* Cities */}
       {citiesList.length > 1 && (
-        <div>
-          <div className="text-xs font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5" /> المدينة
-          </div>
+        <FilterSection title="المدينة" icon={Building2} count={citiesList.length} defaultOpen>
           <div className="flex flex-wrap gap-1.5">
             {citiesList.map(([c, n]) => {
               const active = selectedCity === c;
               return (
                 <button key={c} onClick={() => setCity(c)}
-                  className={`text-xs px-3 py-1.5 rounded-full transition border ${active ? 'bg-brand-600 text-white border-brand-600' : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'}`}>
-                  {c} <span className={active ? 'opacity-80' : 'opacity-50'}>· {n}</span>
+                  className={`text-[11px] px-2.5 py-1 rounded-full transition border ${active ? 'bg-brand-600 text-white border-brand-600 shadow-sm' : 'bg-white hover:bg-brand-50 hover:border-brand-300 border-slate-200 text-slate-700'}`}>
+                  {c} <span className={active ? 'opacity-80' : 'text-slate-400'}>· {n}</span>
                 </button>
               );
             })}
           </div>
-        </div>
+        </FilterSection>
       )}
 
-      {/* Filter search (applies to all tag groups) */}
+      {/* Filter search (applies to tag groups) */}
       {tagsList.length >= 2 && (
         <div className="relative">
           <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
           <input value={filterQuery} onChange={(e) => setFilterQuery(e.target.value)}
             className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg pr-8 pl-3 py-2 outline-none focus:border-brand-500 focus:bg-white transition"
-            placeholder="ابحث في الفلاتر..." />
+            placeholder="ابحث داخل الفلاتر..." />
         </div>
       )}
 
-      {/* Medical specialties (hierarchical sub-section under أطباء) */}
+      {/* Medical specialties */}
       {medicalTagsList.length >= 2 && (
-        <div>
-          <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-100">
-            <div className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-              <span className="w-1 h-3 rounded-full bg-red-500" />
-              التخصصات الطبية
-              <span className="text-slate-400 font-normal">({medicalTagsList.length})</span>
-            </div>
-          </div>
+        <FilterSection title="التخصصات الطبية" accent="red" count={medicalTagsList.length} defaultOpen>
           <div className="flex flex-wrap gap-1.5 max-h-72 overflow-y-auto pb-1 -mx-1 px-1">
             {medicalTagsList
               .filter(([t]) => !filterQuery || t.toLowerCase().includes(filterQuery.toLowerCase()))
@@ -339,25 +377,21 @@ export default function CategoryPage() {
                 const active = selectedTags.includes(t);
                 return (
                   <button key={t} onClick={() => toggleTag(t)}
-                    className={`text-xs px-3 py-1.5 rounded-full transition border ${active ? 'bg-red-600 text-white border-red-600 shadow-sm' : 'bg-white hover:bg-red-50 hover:border-red-300 border-slate-200 text-slate-700'}`}>
-                    {t} <span className={active ? 'opacity-80' : 'opacity-50'}>· {n}</span>
+                    className={`text-[11px] px-2.5 py-1 rounded-full transition border ${active ? 'bg-red-600 text-white border-red-600 shadow-sm' : 'bg-white hover:bg-red-50 hover:border-red-300 border-slate-200 text-slate-700'}`}>
+                    {t} <span className={active ? 'opacity-80' : 'text-slate-400'}>· {n}</span>
                   </button>
                 );
               })}
           </div>
-        </div>
+        </FilterSection>
       )}
 
-      {/* General categories/types (restaurants, hotels, shops, etc.) */}
+      {/* General tags */}
       {generalTagsList.length >= 2 && (
-        <div>
-          <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-100">
-            <div className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-              <span className="w-1 h-3 rounded-full bg-brand-500" />
-              {medicalTagsList.length ? 'فئات أخرى' : ((slug === 'clinics' || slug === 'doctors') ? 'التخصص' : 'الفئة / النوع')}
-              <span className="text-slate-400 font-normal">({generalTagsList.length})</span>
-            </div>
-          </div>
+        <FilterSection
+          title={medicalTagsList.length ? 'فئات أخرى' : ((slug === 'clinics' || slug === 'doctors') ? 'التخصص' : 'الفئة / النوع')}
+          count={generalTagsList.length}
+          defaultOpen>
           <div className="flex flex-wrap gap-1.5 max-h-80 overflow-y-auto pb-1 -mx-1 px-1">
             {generalTagsList
               .filter(([t]) => !filterQuery || t.toLowerCase().includes(filterQuery.toLowerCase()))
@@ -365,16 +399,16 @@ export default function CategoryPage() {
                 const active = selectedTags.includes(t);
                 return (
                   <button key={t} onClick={() => toggleTag(t)}
-                    className={`text-xs px-3 py-1.5 rounded-full transition border ${active ? 'bg-brand-600 text-white border-brand-600 shadow-sm' : 'bg-white hover:bg-brand-50 hover:border-brand-300 border-slate-200 text-slate-700'}`}>
-                    {t} <span className={active ? 'opacity-80' : 'opacity-50'}>· {n}</span>
+                    className={`text-[11px] px-2.5 py-1 rounded-full transition border ${active ? 'bg-brand-600 text-white border-brand-600 shadow-sm' : 'bg-white hover:bg-brand-50 hover:border-brand-300 border-slate-200 text-slate-700'}`}>
+                    {t} <span className={active ? 'opacity-80' : 'text-slate-400'}>· {n}</span>
                   </button>
                 );
               })}
           </div>
-        </div>
+        </FilterSection>
       )}
 
-      {/* No-match message when both groups filter out */}
+      {/* No-match message */}
       {tagsList.length >= 2 && filterQuery &&
         medicalTagsList.filter(([t]) => t.toLowerCase().includes(filterQuery.toLowerCase())).length === 0 &&
         generalTagsList.filter(([t]) => t.toLowerCase().includes(filterQuery.toLowerCase())).length === 0 && (
@@ -384,8 +418,8 @@ export default function CategoryPage() {
         )}
 
       {onClose && (
-        <button onClick={onClose} className="btn-primary w-full justify-center">
-          عرض {stats.total} نتيجة
+        <button onClick={onClose} className="btn-primary w-full justify-center sticky bottom-0">
+          عرض {stats.total.toLocaleString('ar-EG')} نتيجة
         </button>
       )}
     </div>
