@@ -500,14 +500,16 @@ export default function CategoryPage() {
           {/* Desktop sticky filter sidebar */}
           <aside className="hidden lg:block">
             {(tagsList.length >= 3 || citiesList.length > 1) && (
-              <div className="card p-5 sticky top-24">
-                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+              <div className="card sticky top-24 max-h-[calc(100vh-7rem)] flex flex-col overflow-hidden">
+                <div className="flex items-center gap-2 px-5 pt-5 pb-3 border-b border-slate-100 shrink-0 bg-white rounded-t-2xl">
                   <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center">
                     <SlidersHorizontal className="w-4 h-4" />
                   </div>
                   <div className="font-bold">الفلاتر</div>
                 </div>
-                <FilterPanel />
+                <div className="flex-1 overflow-y-auto px-5 py-4">
+                  <FilterPanel />
+                </div>
               </div>
             )}
           </aside>
