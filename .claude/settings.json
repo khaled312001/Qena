@@ -2,6 +2,9 @@
   "permissions": {
     "additionalDirectories": [
       "C:\\Users\\AIA\\.claude\\projects\\f--Qena"
+    ],
+    "allow": [
+      "Bash(python _tools/ssh_explore.py ' *)"
     ]
   }
 }

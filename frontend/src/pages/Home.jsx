@@ -16,12 +16,31 @@ export default function Home() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
+    // Only fetch "important places" for the featured strip — hospitals, medical,
+    // government, landmarks, education. Skip shops / cafes / salons / gas / banks.
+    const PRIORITY = ['hospitals', 'clinics', 'pharmacies', 'government', 'tourism', 'education'];
+    const priorityCalls = PRIORITY.map((slug) =>
+      api.get('/services', {
+        params: { category: slug, featured: '1', limit: 2, includeCategory: '1' },
+      }).then((r) => r.data.rows).catch(() => [])
+    );
+
     Promise.all([
       api.get('/categories/with-counts'),
-      api.get('/services', { params: { featured: '1', limit: 6, includeCategory: '1' } }),
-    ]).then(([c, f]) => {
+      Promise.all(priorityCalls),
+    ]).then(([c, priorityRows]) => {
       setCategories(c.data);
-      setFeatured(f.data.rows);
+      // Flatten + dedupe + cap at 6
+      const seen = new Set();
+      const merged = [];
+      for (const rows of priorityRows) {
+        for (const s of rows) {
+          if (seen.has(s.id)) continue;
+          seen.add(s.id);
+          merged.push(s);
+        }
+      }
+      setFeatured(merged.slice(0, 6));
       const total = c.data.reduce((acc, x) => acc + (x.services_count || 0), 0);
       setStats({ services: total, categories: c.data.length });
     }).finally(() => setLoading(false));

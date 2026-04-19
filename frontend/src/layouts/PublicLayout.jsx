@@ -71,58 +71,62 @@ export default function PublicLayout() {
             <Menu className="w-5 h-5" />
           </button>
         </div>
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              className="lg:hidden fixed inset-0 z-50 bg-black/40"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setOpen(false)}>
-              <motion.aside
-                initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
-                transition={{ type: 'tween', duration: 0.25 }}
-                className="absolute right-0 top-0 bottom-0 w-[85vw] max-w-sm bg-white shadow-xl p-4 pt-[max(1rem,env(safe-area-inset-top))] overflow-y-auto"
-                onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between mb-6">
-                  <Link to="/" onClick={() => setOpen(false)} className="flex items-center gap-2">
-                    <img src="/logo.svg" className="w-9 h-9" alt="" />
-                    <div className="leading-tight">
-                      <div className="font-extrabold">قناوي</div>
-                      <div className="text-[10px] text-slate-500">دليل قنا</div>
-                    </div>
-                  </Link>
-                  <button className="btn-ghost min-h-11 min-w-11" onClick={() => setOpen(false)} aria-label="إغلاق"><X className="w-5 h-5" /></button>
-                </div>
-                <div className="flex flex-col gap-1">
-                  {links.map((l) => (
-                    <NavLink key={l.to} to={l.to} end={l.to === '/'} onClick={() => setOpen(false)}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-3 rounded-xl ${isActive ? 'bg-brand-50 text-brand-700' : 'hover:bg-slate-50'}`}>
-                      <l.icon className="w-5 h-5" /> {l.label}
-                    </NavLink>
-                  ))}
-                </div>
-                <div className="mt-6 pt-4 border-t border-slate-100">
-                  <div className="text-xs text-slate-500 mb-2 text-center font-semibold">تواصل مع شركة برمجلي</div>
+      </header>
+
+      {/* Mobile drawer — OUTSIDE header because backdrop-blur on header
+          creates a containing block that breaks position:fixed */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="lg:hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setOpen(false)}>
+            <motion.aside
+              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
+              transition={{ type: 'tween', duration: 0.25 }}
+              className="fixed left-0 top-0 bottom-0 w-[82vw] max-w-[340px] bg-white shadow-2xl flex flex-col overflow-hidden"
+              style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+              onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between gap-2 p-4 border-b border-slate-100 bg-gradient-to-bl from-brand-50 to-white shrink-0">
+                <Link to="/" onClick={() => setOpen(false)} className="flex items-center gap-2.5 min-w-0">
+                  <img src="/logo.svg" className="w-10 h-10 shrink-0" alt="" />
+                  <div className="leading-tight min-w-0">
+                    <div className="font-extrabold text-slate-900">قناوي</div>
+                    <div className="text-[11px] text-slate-500 truncate">دليل قنا · مجاناً</div>
+                  </div>
+                </Link>
+                <button className="btn-ghost min-h-11 min-w-11 shrink-0" onClick={() => setOpen(false)} aria-label="إغلاق"><X className="w-5 h-5" /></button>
+              </div>
+              <div className="p-4 flex-1 flex flex-col gap-1 overflow-y-auto">
+                {links.map((l) => (
+                  <NavLink key={l.to} to={l.to} end={l.to === '/'} onClick={() => setOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-3 py-3 rounded-xl text-[15px] ${isActive ? 'bg-brand-50 text-brand-700 font-semibold' : 'hover:bg-slate-50'}`}>
+                    <l.icon className="w-5 h-5 shrink-0" /> {l.label}
+                  </NavLink>
+                ))}
+                <div className="mt-auto pt-4 border-t border-slate-100">
+                  <div className="text-[11px] text-slate-500 mb-2 text-center font-semibold">📞 تواصل مع شركة برمجلي</div>
                   <div className="grid gap-2">
                     <a href="tel:01010254819" dir="ltr"
-                       className="btn bg-amber-500 text-slate-900 hover:bg-amber-400 w-full justify-center font-bold">
-                      <Phone className="w-4 h-4" /> شركة برمجلي · 01010254819
+                       className="btn bg-amber-500 text-slate-900 hover:bg-amber-400 w-full justify-center font-bold text-sm">
+                      <Phone className="w-4 h-4" /> 01010254819
                     </a>
                     <a href="tel:+201060049287" dir="ltr"
-                       className="btn bg-emerald-600 text-white hover:bg-emerald-500 w-full justify-center">
-                      <Phone className="w-4 h-4" /> م. أحمد كمال · +20 10 6004 9287
+                       className="btn bg-emerald-600 text-white hover:bg-emerald-500 w-full justify-center text-sm">
+                      <Phone className="w-4 h-4" /> م. أحمد — 10 6004 9287
                     </a>
                     <a href="tel:+201204593124" dir="ltr"
-                       className="btn bg-emerald-600 text-white hover:bg-emerald-500 w-full justify-center">
-                      <Phone className="w-4 h-4" /> م. خالد أحمد · +20 12 0459 3124
+                       className="btn bg-emerald-600 text-white hover:bg-emerald-500 w-full justify-center text-sm">
+                      <Phone className="w-4 h-4" /> م. خالد — 12 0459 3124
                     </a>
                   </div>
                 </div>
-              </motion.aside>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
+              </div>
+            </motion.aside>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main className="flex-1 pb-[calc(68px+env(safe-area-inset-bottom))] lg:pb-0">
         <Outlet />
