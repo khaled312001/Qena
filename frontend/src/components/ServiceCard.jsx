@@ -18,10 +18,12 @@ export default function ServiceCard({ s }) {
   const [imgOk, setImgOk] = useState(true);
   const showImage = isReal(s.image_url) && imgOk;
 
+  const phoneDigits = (s.phone || '').replace(/[^\d+]/g, '');
+
   return (
-    <Link to={`/service/${s.id}`}
-      className="card overflow-hidden flex flex-col hover:shadow-soft hover:-translate-y-1 transition group">
-      <div className="h-36 sm:h-40 relative overflow-hidden">
+    <div className="card overflow-hidden flex flex-col hover:shadow-soft hover:-translate-y-1 transition group relative">
+      <Link to={`/service/${s.id}`} className="absolute inset-0 z-0" aria-label={s.name} />
+      <div className="h-36 sm:h-40 relative overflow-hidden pointer-events-none">
         {showImage ? (
           <img src={s.image_url} alt={s.name} loading="lazy"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -37,14 +39,14 @@ export default function ServiceCard({ s }) {
             </div>
           </div>
         )}
-        <div className="absolute bottom-0 inset-x-0 h-14 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 inset-x-0 h-14 bg-gradient-to-t from-black/40 to-transparent" />
         {s.is_featured && (
           <span className="absolute top-2 right-2 bg-amber-400 text-amber-950 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow">
             <Star className="w-3 h-3 fill-amber-900" /> مميز
           </span>
         )}
       </div>
-      <div className="p-4 flex flex-col gap-3 flex-1">
+      <div className="p-4 flex flex-col gap-3 flex-1 relative pointer-events-none">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                style={{ backgroundColor: color + '18', color }}>
@@ -58,18 +60,34 @@ export default function ServiceCard({ s }) {
         {s.description && (
           <p className="text-sm text-slate-600 line-clamp-2 leading-6">{s.description}</p>
         )}
-        <div className="flex flex-wrap gap-1.5 mt-auto">
+        <div className="flex flex-wrap gap-1.5">
           {(s.address || s.city) && (
             <span className="chip"><MapPin className="w-3 h-3" /> {s.city || s.address}</span>
-          )}
-          {s.phone && (
-            <span className="chip"><Phone className="w-3 h-3" /> {s.phone}</span>
           )}
           {s.working_hours && (
             <span className="chip"><Clock className="w-3 h-3" /> {s.working_hours}</span>
           )}
         </div>
+        <div className="mt-auto pt-1 pointer-events-auto relative z-10">
+          {phoneDigits ? (
+            <a
+              href={`tel:${phoneDigits}`}
+              onClick={(e) => e.stopPropagation()}
+              dir="ltr"
+              className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-sm py-2.5 rounded-xl shadow-sm transition"
+              aria-label={`اتصال بـ ${s.name}`}
+            >
+              <Phone className="w-4 h-4" />
+              <span>اتصال — {s.phone}</span>
+            </a>
+          ) : (
+            <div className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-500 text-sm py-2.5 rounded-xl">
+              <Phone className="w-4 h-4" />
+              <span>لا يوجد رقم هاتف</span>
+            </div>
+          )}
+        </div>
       </div>
-    </Link>
+    </div>
   );
 }

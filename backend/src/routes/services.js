@@ -6,6 +6,68 @@ const upload = require('../middleware/upload');
 
 const router = express.Router();
 
+// Public aggregate counts + facets — used by the category / search page to show
+// real totals and real tag/city counts independent of list pagination.
+router.get('/aggregate', async (req, res) => {
+  const { category, q, city, facets } = req.query;
+  const where = { status: 'approved' };
+
+  if (q) {
+    where[Op.or] = [
+      { name: { [Op.like]: `%${q}%` } },
+      { description: { [Op.like]: `%${q}%` } },
+      { address: { [Op.like]: `%${q}%` } },
+      { tags: { [Op.like]: `%${q}%` } },
+    ];
+  }
+  if (city) where.city = city;
+  if (category && category !== 'all') {
+    const cat = await Category.findOne({ where: { slug: category } });
+    if (cat) where.category_id = cat.id;
+    else return res.json({ total: 0, withPhone: 0, withMap: 0, withImage: 0, tags: [], cities: [], categories: [] });
+  }
+
+  const [total, withPhone, withMap, withImage] = await Promise.all([
+    Service.count({ where }),
+    Service.count({ where: { ...where, phone: { [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: '' }] } } }),
+    Service.count({ where: { ...where, lat: { [Op.ne]: null }, lng: { [Op.ne]: null } } }),
+    Service.count({ where: { ...where, image_url: { [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: '' }] } } }),
+  ]);
+
+  const result = { total, withPhone, withMap, withImage };
+
+  // Facets: real per-tag / per-city / per-category counts from the DB,
+  // NOT from the paginated list. Cheap — we only fetch three small columns.
+  if (facets === '1') {
+    const rows = await Service.findAll({
+      where,
+      attributes: ['tags', 'city', 'category_id'],
+      include: [{ model: Category, as: 'category', attributes: ['slug', 'name', 'icon', 'color'] }],
+      raw: false,
+    });
+
+    const tagMap = new Map(), cityMap = new Map(), catMap = new Map();
+    for (const r of rows) {
+      if (r.tags) {
+        for (const t of String(r.tags).split(/[,،]+/).map((x) => x.trim()).filter((x) => x && x.length > 1 && x.length < 40)) {
+          tagMap.set(t, (tagMap.get(t) || 0) + 1);
+        }
+      }
+      if (r.city) cityMap.set(r.city, (cityMap.get(r.city) || 0) + 1);
+      const c = r.category;
+      if (c && c.slug) {
+        if (!catMap.has(c.slug)) catMap.set(c.slug, { slug: c.slug, name: c.name, icon: c.icon, color: c.color, count: 0 });
+        catMap.get(c.slug).count += 1;
+      }
+    }
+    result.tags = [...tagMap.entries()].sort((a, b) => b[1] - a[1]);
+    result.cities = [...cityMap.entries()].sort((a, b) => b[1] - a[1]);
+    result.categories = [...catMap.values()].sort((a, b) => b.count - a.count);
+  }
+
+  res.json(result);
+});
+
 router.get('/', async (req, res) => {
   const {
     category,
@@ -41,7 +103,7 @@ router.get('/', async (req, res) => {
   const { rows, count } = await Service.findAndCountAll({
     where,
     include,
-    limit: Math.min(Number(limit), 200),
+    limit: Math.min(Number(limit) || 60, 1000),
     offset: Number(offset),
     order: [['is_featured', 'DESC'], ['created_at', 'DESC']],
   });

@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../lib/api.js';
 import ServiceCard from '../components/ServiceCard.jsx';
 import { Icon } from '../lib/icons.jsx';
+import AdSlot from '../components/AdSlot.jsx';
 
 const SORT_OPTIONS = [
   { v: 'important', l: 'الأهم أولاً' },
@@ -52,19 +53,51 @@ export default function CategoryPage() {
   const [view, setView] = useState(localStorage.getItem('qena_view') || 'grid');
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
+  // Real DB-level aggregate counts + facets (independent of list pagination)
+  const [dbStats, setDbStats] = useState({ total: 0, withPhone: 0, withMap: 0, withImage: 0 });
+  const [dbFacets, setDbFacets] = useState(null); // { tags, cities, categories } from DB, or null → fall back to in-memory
+  const [totalInDb, setTotalInDb] = useState(0);
 
   useEffect(() => { localStorage.setItem('qena_view', view); }, [view]);
 
   useEffect(() => {
     setLoading(true);
-    const params = { includeCategory: '1', limit: 400 };
+    const params = { includeCategory: '1', limit: 1000 };
     if (slug && slug !== 'all') params.category = slug;
     if (q) params.q = q;
-    const jobs = [api.get('/services', { params })];
+    const aggParams = { facets: '1' };
+    if (slug && slug !== 'all') aggParams.category = slug;
+    if (q) aggParams.q = q;
+    const jobs = [
+      api.get('/services', { params }),
+      api.get('/services/aggregate', { params: aggParams }).catch(() => ({ data: null })),
+    ];
     if (slug && slug !== 'all') jobs.push(api.get(`/categories/${slug}`));
     Promise.all(jobs)
-      .then(([svc, cat]) => {
+      .then(([svc, agg, cat]) => {
         setServices(svc.data.rows);
+        setTotalInDb(svc.data.total || svc.data.rows.length);
+        if (agg && agg.data) {
+          setDbStats({
+            total: agg.data.total || 0,
+            withPhone: agg.data.withPhone || 0,
+            withMap: agg.data.withMap || 0,
+            withImage: agg.data.withImage || 0,
+          });
+          setDbFacets(agg.data.tags ? {
+            tags: agg.data.tags || [],
+            cities: agg.data.cities || [],
+            categories: agg.data.categories || [],
+          } : null);
+        } else {
+          setDbStats({
+            total: svc.data.total || svc.data.rows.length,
+            withPhone: svc.data.rows.filter((s) => s.phone).length,
+            withMap: svc.data.rows.filter((s) => s.lat && s.lng).length,
+            withImage: 0,
+          });
+          setDbFacets(null);
+        }
         setCategory(cat ? cat.data : null);
       })
       .catch(() => setServices([]))
@@ -75,13 +108,45 @@ export default function CategoryPage() {
   // We group them separately so they appear as a sub-section under "أطباء"
   const MEDICAL_CATEGORY_SLUGS = new Set(['clinics', 'doctors']);
 
-  // Extract unique tags + cities + category-grouped tags
+  // Extract unique tags + cities + category-grouped tags.
+  // When server returned facets (true DB counts) we trust them directly.
+  // Otherwise we fall back to computing from the in-memory list.
   const { tagsList, medicalTagsList, generalTagsList, citiesList, categoriesList } = useMemo(() => {
+    // Tag-origin map (medical vs general) always comes from the in-memory rows
+    // since we know the per-row category there. This determines which bucket
+    // each DB-counted tag belongs to.
+    const tagOrigin = new Map(); // tag -> 'med' | 'gen'
+    for (const s of services) {
+      const cat = s.category || {};
+      const isMed = MEDICAL_CATEGORY_SLUGS.has(cat.slug);
+      if (s.tags) {
+        for (const t of s.tags.split(/[,،]+/).map((x) => x.trim()).filter((x) => x && x.length > 1 && x.length < 40)) {
+          if (!tagOrigin.has(t)) tagOrigin.set(t, isMed ? 'med' : 'gen');
+          else if (tagOrigin.get(t) === 'gen' && isMed) tagOrigin.set(t, 'med');
+        }
+      }
+    }
+
+    // Prefer server-side DB facets (true totals) when available
+    if (dbFacets) {
+      const tagsArr = dbFacets.tags;
+      const med = tagsArr.filter(([t]) => tagOrigin.get(t) === 'med');
+      const gen = tagsArr.filter(([t]) => tagOrigin.get(t) !== 'med');
+      return {
+        tagsList: tagsArr,
+        medicalTagsList: med,
+        generalTagsList: gen,
+        citiesList: dbFacets.cities,
+        categoriesList: dbFacets.categories,
+      };
+    }
+
+    // Fallback: compute from the loaded rows
     const tags = new Map();
     const medTags = new Map();
     const genTags = new Map();
     const cities = new Map();
-    const cats = new Map(); // slug -> { name, count, icon, color }
+    const cats = new Map();
 
     for (const s of services) {
       const cat = s.category || {};
@@ -91,7 +156,6 @@ export default function CategoryPage() {
         if (!cats.has(cat.slug)) cats.set(cat.slug, { slug: cat.slug, name: cat.name, icon: cat.icon, color: cat.color, count: 0 });
         cats.get(cat.slug).count += 1;
       }
-
       if (s.tags) {
         for (const t of s.tags.split(/[,،]+/).map((x) => x.trim()).filter((x) => x && x.length > 1 && x.length < 40)) {
           tags.set(t, (tags.get(t) || 0) + 1);
@@ -108,7 +172,7 @@ export default function CategoryPage() {
       citiesList: [...cities.entries()].sort((a, b) => b[1] - a[1]),
       categoriesList: [...cats.values()].sort((a, b) => b.count - a.count),
     };
-  }, [services]);
+  }, [services, dbFacets]);
 
   // Client-side filter + sort
   const filtered = useMemo(() => {
@@ -168,11 +232,18 @@ export default function CategoryPage() {
   }
 
   const hasFilters = selectedTags.length > 0 || selectedCity;
-  const stats = useMemo(() => ({
-    total: filtered.length,
-    withPhone: filtered.filter((s) => s.phone).length,
-    withMap: filtered.filter((s) => s.lat && s.lng).length,
-  }), [filtered]);
+  // When client-side filters are active (tag/city), show counts from the currently
+  // filtered subset. Otherwise show the real DB totals (not capped by the 200-row list).
+  const stats = useMemo(() => {
+    if (hasFilters) {
+      return {
+        total: filtered.length,
+        withPhone: filtered.filter((s) => s.phone).length,
+        withMap: filtered.filter((s) => s.lat && s.lng).length,
+      };
+    }
+    return dbStats;
+  }, [hasFilters, filtered, dbStats]);
 
   const FilterPanel = ({ onClose }) => (
     <div className="space-y-5">
@@ -474,11 +545,34 @@ export default function CategoryPage() {
               </div>
             )}
             {!loading && filtered.length > 0 && (
-              <div className={view === 'grid'
-                ? 'grid md:grid-cols-2 xl:grid-cols-3 gap-4'
-                : 'grid grid-cols-1 gap-3'}>
-                {filtered.map((s) => (<ServiceCard key={s.id} s={s} />))}
-              </div>
+              <>
+                <div className={view === 'grid'
+                  ? 'grid md:grid-cols-2 xl:grid-cols-3 gap-4'
+                  : 'grid grid-cols-1 gap-3'}>
+                  {filtered.slice(0, 12).map((s) => (<ServiceCard key={s.id} s={s} />))}
+                </div>
+                {/* In-feed ad after first 12 results */}
+                {filtered.length > 12 && (
+                  <AdSlot slot={AdSlot.INFEED || AdSlot.INLINE} format="fluid" />
+                )}
+                {filtered.length > 12 && (
+                  <div className={view === 'grid'
+                    ? 'grid md:grid-cols-2 xl:grid-cols-3 gap-4'
+                    : 'grid grid-cols-1 gap-3'}>
+                    {filtered.slice(12, 24).map((s) => (<ServiceCard key={s.id} s={s} />))}
+                  </div>
+                )}
+                {filtered.length > 24 && (
+                  <>
+                    <AdSlot slot={AdSlot.INFEED || AdSlot.INLINE} format="fluid" />
+                    <div className={view === 'grid'
+                      ? 'grid md:grid-cols-2 xl:grid-cols-3 gap-4'
+                      : 'grid grid-cols-1 gap-3'}>
+                      {filtered.slice(24).map((s) => (<ServiceCard key={s.id} s={s} />))}
+                    </div>
+                  </>
+                )}
+              </>
             )}
           </div>
         </div>

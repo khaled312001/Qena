@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Phone, Plus, ChevronLeft, Scroll, Sparkles } from 'lucide-react';
+import { Phone, Plus, ChevronLeft, Scroll, Sparkles, MapPin, Heart, CheckCircle2, ShieldCheck } from 'lucide-react';
 import api from '../lib/api.js';
 import { Icon } from '../lib/icons.jsx';
 import ServiceCard from '../components/ServiceCard.jsx';
 import EmergencyStrip from '../components/EmergencyStrip.jsx';
 import SearchBox from '../components/SearchBox.jsx';
+import AdSlot from '../components/AdSlot.jsx';
 
 export default function Home() {
   const [categories, setCategories] = useState([]);
@@ -29,64 +30,130 @@ export default function Home() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-bl from-brand-700 via-brand-800 to-brand-900" />
-        <div className="absolute inset-0" style={{ backgroundImage: 'url(/hero-pattern.svg)', backgroundSize: 'cover', opacity: 0.45 }} />
-        <div className="absolute -top-20 -left-20 w-80 h-80 bg-amber-400/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-sky-400/10 rounded-full blur-3xl" />
+      <section className="relative overflow-hidden isolate">
+        {/* Layered backgrounds */}
+        <div className="absolute inset-0 bg-gradient-to-bl from-[#0b3f66] via-[#0c4a6e] to-[#082f49]" />
+        <div className="absolute inset-0" style={{ backgroundImage: 'url(/hero-pattern.svg)', backgroundSize: 'cover', opacity: 0.25 }} />
+        {/* Sun glow */}
+        <div className="absolute -top-32 right-[20%] w-[420px] h-[420px] rounded-full bg-gradient-radial from-amber-300/30 via-amber-400/10 to-transparent blur-3xl" style={{ background: 'radial-gradient(circle, rgba(252,211,77,0.35) 0%, rgba(252,211,77,0.05) 55%, transparent 75%)' }} />
+        <div className="absolute -bottom-40 -left-32 w-[520px] h-[520px] rounded-full bg-gradient-radial from-sky-400/25 to-transparent blur-3xl" style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.28) 0%, transparent 70%)' }} />
+        {/* Subtle grid lines */}
+        <div className="absolute inset-0 opacity-[0.06]" style={{
+          backgroundImage: 'linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)',
+          backgroundSize: '44px 44px',
+          maskImage: 'linear-gradient(to bottom, black 40%, transparent)',
+        }} />
 
-        <div className="container-p relative py-12 sm:py-16 md:py-24 text-white">
-          <div className="grid lg:grid-cols-[1.4fr,1fr] gap-10 items-center">
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <div className="inline-flex items-center gap-2 bg-white/15 text-white text-[11px] sm:text-xs px-3 py-1.5 rounded-full backdrop-blur mb-4">
-                <Sparkles className="w-3.5 h-3.5" /> خدمة مجانية لسكان محافظة قنا · مقدمة من برمجلي
+        <div className="container-p relative py-10 sm:py-16 md:py-20 text-white">
+          <div className="grid lg:grid-cols-[1.35fr,1fr] gap-8 lg:gap-12 items-center">
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
+              {/* Tagline badge */}
+              <div className="inline-flex items-center gap-2 bg-white/10 border border-white/15 text-white text-[11px] sm:text-xs px-3.5 py-1.5 rounded-full backdrop-blur mb-5">
+                <Heart className="w-3.5 h-3.5 text-rose-300 fill-rose-300/60" />
+                <span>خدمة خيرية مجانية</span>
+                <span className="h-3 w-px bg-white/25" />
+                <span className="text-amber-200/90">مقدمة من شركة برمجلي</span>
               </div>
-              <h1 className="text-[2.25rem] leading-[1.1] sm:text-5xl md:text-6xl font-extrabold mb-4" style={{ fontFamily: 'Cairo, sans-serif' }}>
-                قناوي
-                <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-l from-amber-300 via-yellow-300 to-amber-200">
-                  عروس الصعيد
-                </span>{' '}
-                في إيدك
+
+              {/* Headline */}
+              <h1 className="font-extrabold mb-4 leading-[1.08] tracking-tight" style={{ fontFamily: 'Cairo, sans-serif' }}>
+                <span className="block text-3xl sm:text-5xl md:text-[3.75rem]">دليل قنا</span>
+                <span className="block text-2xl sm:text-4xl md:text-5xl mt-2 text-white/95">
+                  كل خدمات{' '}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-l from-amber-200 via-yellow-300 to-amber-300">
+                    عروس الصعيد
+                  </span>
+                </span>
+                <span className="block text-xl sm:text-3xl md:text-4xl mt-2 text-white/85 font-bold">
+                  في مكان واحد
+                </span>
               </h1>
-              <p className="text-white/90 text-sm sm:text-base md:text-lg leading-7 sm:leading-8 max-w-xl">
-                دليل مجاني شامل لكل الخدمات في قنا — مستشفيات، فنادق، مطاعم، كافيهات، محلات، بنوك، أرقام طوارئ، ومعالم سياحية — بإحداثيات دقيقة على الخريطة.
+
+              {/* Subheading — shorter, clearer, conversational */}
+              <p className="text-white/85 text-sm sm:text-base md:text-lg leading-7 sm:leading-8 max-w-xl">
+                ابحث عن مستشفى قريب · صيدلية ٢٤ ساعة · رقم طوارئ · أقرب فرع بنك أو مطعم — بإحداثيات دقيقة على الخريطة.
               </p>
-              <div className="mt-7">
+
+              {/* Trust row */}
+              <div className="mt-5 flex flex-wrap items-center gap-3 sm:gap-4 text-[11px] sm:text-xs text-white/75">
+                <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" /> بيانات محقّقة من Google</span>
+                <span className="inline-flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 text-sky-300" /> بدون إعلانات</span>
+                <span className="inline-flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-amber-300" /> مركز قنا ومراكزها</span>
+              </div>
+
+              {/* Search */}
+              <div className="mt-6 sm:mt-7">
                 <SearchBox />
               </div>
-              <div className="mt-6 flex flex-wrap items-center gap-2">
-                <Link to="/numbers" className="btn bg-white/15 text-white hover:bg-white/25 backdrop-blur border border-white/10">
-                  <Phone className="w-4 h-4" /> أرقام مهمة
+
+              {/* Actions */}
+              <div className="mt-5 sm:mt-6 flex flex-wrap items-center gap-2">
+                <Link to="/numbers" className="btn bg-white/10 text-white hover:bg-white/20 backdrop-blur border border-white/15">
+                  <Phone className="w-4 h-4" /> أرقام طوارئ
                 </Link>
-                <Link to="/qena" className="btn bg-white/15 text-white hover:bg-white/25 backdrop-blur border border-white/10">
+                <Link to="/qena" className="btn bg-white/10 text-white hover:bg-white/20 backdrop-blur border border-white/15">
                   <Scroll className="w-4 h-4" /> عن قنا
                 </Link>
-                <Link to="/submit" className="btn bg-amber-400 text-amber-950 hover:bg-amber-300 font-bold">
-                  <Plus className="w-4 h-4" /> أضف خدمتك
+                <Link to="/submit" className="btn bg-amber-400 text-amber-950 hover:bg-amber-300 font-bold shadow-lg shadow-amber-400/25">
+                  <Plus className="w-4 h-4" /> أضف خدمتك مجاناً
                 </Link>
               </div>
+
+              {/* Stats */}
               {stats && (
-                <div className="mt-8 grid grid-cols-3 gap-3 max-w-md">
-                  <Stat value={stats.services} label="خدمة" />
-                  <Stat value={stats.categories} label="قسم" />
-                  <Stat value={'100%'} label="مجاناً" />
+                <div className="mt-7 sm:mt-8 grid grid-cols-3 gap-2 sm:gap-3 max-w-md">
+                  <Stat value={stats.services.toLocaleString('ar-EG')} label="خدمة حقيقية" />
+                  <Stat value={stats.categories} label="قسم متنوّع" />
+                  <Stat value="١٠٠٪" label="مجاناً دائماً" />
                 </div>
               )}
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
-              className="hidden lg:block">
+            {/* Right visual — coat of arms + logo */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, rotate: 2 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              transition={{ delay: 0.15, duration: 0.6 }}
+              className="hidden lg:block relative">
               <div className="relative">
-                <div className="w-full max-w-xs mx-auto rounded-2xl shadow-2xl ring-4 ring-white/20 rotate-[-3deg] bg-white p-4">
-                  <img src="/qena-coat.jpg" alt="شعار محافظة قنا الرسمي" className="w-full h-auto rounded-xl" />
-                  <div className="text-center mt-3 text-sky-900 text-sm font-bold">محافظة قنا</div>
+                {/* Orbit ring */}
+                <div className="absolute inset-0 rounded-full border border-white/15" style={{ clipPath: 'inset(0 0 25% 0 round 9999px)' }} />
+                {/* Glow behind coat */}
+                <div className="absolute inset-0 bg-gradient-radial from-amber-300/30 to-transparent blur-2xl rounded-full"
+                     style={{ background: 'radial-gradient(circle, rgba(252,211,77,0.3), transparent 60%)' }} />
+                {/* Coat of arms card */}
+                <div className="relative w-full max-w-xs mx-auto rounded-3xl shadow-2xl ring-1 ring-white/20 bg-gradient-to-bl from-white to-amber-50 p-5 rotate-[-3deg] hover:rotate-0 transition-transform duration-500">
+                  <div className="aspect-square rounded-2xl overflow-hidden bg-white border border-amber-100">
+                    <img src="/qena-coat.jpg" alt="شعار محافظة قنا الرسمي" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="text-center mt-3">
+                    <div className="text-sky-900 font-extrabold text-base">محافظة قنا</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">الشعار الرسمي</div>
+                  </div>
                 </div>
-                <img src="/logo.svg" alt="" className="absolute -top-8 -right-8 w-24 h-24 drop-shadow-xl" />
+                {/* Floating logo chip */}
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  className="absolute -top-6 -right-6 bg-white rounded-2xl shadow-xl p-2 ring-1 ring-amber-100">
+                  <img src="/logo.svg" alt="" className="w-16 h-16" />
+                </motion.div>
+                {/* Floating Arabic label */}
+                <motion.div
+                  animate={{ y: [0, 6, 0] }}
+                  transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+                  className="absolute -bottom-5 -left-6 bg-amber-400 text-amber-950 font-extrabold text-sm px-4 py-2 rounded-xl shadow-xl -rotate-6">
+                  قناوي · Qinawy
+                </motion.div>
               </div>
             </motion.div>
           </div>
         </div>
+
+        {/* Bottom wave divider */}
+        <svg className="absolute bottom-0 inset-x-0 w-full h-10 sm:h-14 text-slate-50" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+          <path fill="currentColor" d="M0,48 C240,96 480,0 720,32 C960,64 1200,16 1440,48 L1440,80 L0,80 Z" />
+        </svg>
       </section>
 
       <EmergencyStrip />
@@ -125,6 +192,11 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* Ad slot between Categories and Qena strip — non-intrusive */}
+      <div className="container-p">
+        <AdSlot slot={AdSlot.INLINE} format="horizontal" />
+      </div>
 
       {/* Qena strip */}
       <section className="container-p py-6">
@@ -166,6 +238,11 @@ export default function Home() {
         </section>
       )}
 
+      {/* Second ad slot before CTA */}
+      <div className="container-p">
+        <AdSlot slot={AdSlot.INLINE} format="horizontal" />
+      </div>
+
       {/* CTA */}
       <section className="container-p py-14">
         <div className="card p-6 md:p-10 bg-gradient-to-bl from-brand-600 to-brand-800 text-white border-0 relative overflow-hidden">
@@ -189,9 +266,9 @@ export default function Home() {
 
 function Stat({ value, label }) {
   return (
-    <div className="bg-white/10 backdrop-blur border border-white/10 rounded-xl p-3 text-center">
-      <div className="text-2xl font-extrabold text-white">{value}</div>
-      <div className="text-[11px] text-white/80">{label}</div>
+    <div className="group bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-2xl p-3 sm:p-4 text-center hover:bg-white/[0.12] hover:border-white/20 transition-all">
+      <div className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white leading-none">{value}</div>
+      <div className="text-[10px] sm:text-[11px] text-white/70 mt-1.5">{label}</div>
     </div>
   );
 }

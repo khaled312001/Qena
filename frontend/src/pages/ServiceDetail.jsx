@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import api from '../lib/api.js';
 import { Icon } from '../lib/icons.jsx';
+import AdSlot from '../components/AdSlot.jsx';
 
 // Default marker fix for Leaflet + Vite
 const markerIcon = new L.Icon({
@@ -101,11 +102,18 @@ export default function ServiceDetail() {
                   </Marker>
                 </MapContainer>
               </div>
-              <div className="p-3 border-t border-slate-100 text-center">
+              <div className="p-3 border-t border-slate-100 flex flex-wrap items-center justify-center gap-2">
+                <a target="_blank" rel="noreferrer"
+                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                     [s.name, s.address, s.city || 'قنا', 'محافظة قنا'].filter(Boolean).join(' ')
+                   )}`}
+                   className="btn bg-sky-600 text-white hover:bg-sky-700 text-sm">
+                  <MapPin className="w-4 h-4" /> فتح في خرائط جوجل
+                </a>
                 <a target="_blank" rel="noreferrer"
                    href={`https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`}
                    className="btn-outline text-sm">
-                  <MapPin className="w-4 h-4" /> فتح في خرائط جوجل
+                  <MapPin className="w-4 h-4" /> موقع دقيق (إحداثيات)
                 </a>
               </div>
             </div>
@@ -128,6 +136,17 @@ export default function ServiceDetail() {
                 <MessageCircle className="w-4 h-4" /> واتساب
               </a>
             )}
+            {/* Always-available Google Maps search by name + Qena —
+                works even if the service has no stored lat/lng */}
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                [s.name, s.address, s.city || 'قنا', 'محافظة قنا'].filter(Boolean).join(' ')
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+              className="btn bg-sky-600 text-white hover:bg-sky-700 w-full justify-center mt-2">
+              <MapPin className="w-4 h-4" /> فتح في خرائط جوجل
+            </a>
           </div>
 
           <div className="card p-5">
@@ -137,6 +156,9 @@ export default function ServiceDetail() {
               <ArrowLeft className="w-4 h-4" /> إرسال تصحيح
             </Link>
           </div>
+
+          {/* Sidebar ad slot — non-intrusive, won't show unless configured */}
+          <AdSlot slot={AdSlot.SIDEBAR || AdSlot.INLINE} format="auto" />
         </aside>
       </section>
     </div>
