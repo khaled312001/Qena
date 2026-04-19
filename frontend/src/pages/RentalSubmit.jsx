@@ -10,6 +10,7 @@ import {
 import api from '../lib/api.js';
 import LocationPicker from '../components/LocationPicker.jsx';
 import ApprovedMarquee from '../components/ApprovedMarquee.jsx';
+import ImageUploader from '../components/ImageUploader.jsx';
 
 const PROPERTY_TYPES = [
   { id: 'apartment', label: 'شقة كاملة', icon: Home,      desc: 'تأجير شقة كاملة' },
@@ -70,6 +71,7 @@ export default function RentalSubmit() {
     amenities: [],
     distance_to_uni: '',
     description: '',
+    image_url: '',
   });
   const [pin, setPin] = useState(null);
 
@@ -155,6 +157,7 @@ export default function RentalSubmit() {
         whatsapp: form.whatsapp.trim() || null,
         price_range: priceRange || null,
         tags,
+        image_url: form.image_url || null,
         lat: pin?.lat || null,
         lng: pin?.lng || null,
         submitted_by_name: form.owner_name,
@@ -442,6 +445,20 @@ export default function RentalSubmit() {
               <div className="text-xs text-slate-600 mb-2">ثبّت الموقع على الخريطة (اختياري):</div>
               <LocationPicker value={pin} onChange={setPin} height={240} />
             </div>
+          </Card>
+
+          {/* Image upload */}
+          <Card title="صورة للسكن (اختياري)">
+            <div className="text-xs text-slate-500 mb-2 leading-6">
+              صورة واضحة للشقة أو الغرفة تساعد المستأجرين على اتخاذ قرار أسرع.
+              الصور بدون تحديد موقع دقيق أو أرقام أشخاص غير مرغوب فيها قد تُرفض.
+            </div>
+            <ImageUploader
+              value={form.image_url}
+              onChange={(url) => update('image_url', url || '')}
+              endpoint="/services/submit/upload"
+              label="اختر صورة للسكن"
+            />
           </Card>
 
           {/* Description */}

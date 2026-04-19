@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { X, AlertCircle, Send } from 'lucide-react';
 import api from '../lib/api.js';
 import LocationPicker from './LocationPicker.jsx';
+import ImageUploader from './ImageUploader.jsx';
 
 const FIELDS = [
   { k: 'name', l: 'اسم المكان' },
@@ -24,6 +25,7 @@ export default function CorrectionModal({ service, onClose }) {
   const [note, setNote] = useState('');
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
 
   const currentVal = {
@@ -52,6 +54,7 @@ export default function CorrectionModal({ service, onClose }) {
       lines.push(`القيمة المقترحة: ${newValue}`);
     }
     if (note) lines.push(`ملاحظات: ${note}`);
+    if (imageUrl) lines.push(`📎 صورة مرفقة: ${imageUrl}`);
 
     if (field !== 'location' && !newValue && field !== 'closed') {
       toast.error('اكتب القيمة الصحيحة المقترحة');
@@ -169,6 +172,19 @@ export default function CorrectionModal({ service, onClose }) {
             <label className="block text-sm font-semibold mb-2">ملاحظات إضافية (اختياري)</label>
             <textarea className="input min-h-[70px]" value={note} onChange={(e) => setNote(e.target.value)}
               placeholder="أي تفاصيل تساعد الإدارة على التحقق..." />
+          </div>
+
+          {/* Optional proof image — helpful for address/phone corrections */}
+          <div>
+            <label className="block text-sm font-semibold mb-2">
+              صورة مرفقة <span className="text-slate-400 text-xs font-normal">(اختياري — لافتة المحل، بطاقة العمل، شاشة اتصال...)</span>
+            </label>
+            <ImageUploader
+              value={imageUrl}
+              onChange={(url) => setImageUrl(url || '')}
+              endpoint="/services/submit/upload"
+              label="أرفق صورة"
+            />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">

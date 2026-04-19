@@ -9,6 +9,7 @@ import {
 import api from '../lib/api.js';
 import LocationPicker from '../components/LocationPicker.jsx';
 import ApprovedMarquee from '../components/ApprovedMarquee.jsx';
+import ImageUploader from '../components/ImageUploader.jsx';
 
 const VEHICLE_TYPES = [
   { id: 'microbus',   label: 'ميكروباص',      icon: Bus,   desc: 'رحلات داخلية وبين المحافظات' },
@@ -54,6 +55,7 @@ export default function DriverSubmit() {
     price_range: '',
     description: '',
     contact_note: '',
+    image_url: '',
   });
   const [basePin, setBasePin] = useState(null);
 
@@ -109,6 +111,7 @@ export default function DriverSubmit() {
         working_hours: form.working_hours || null,
         price_range: form.price_range || null,
         tags,
+        image_url: form.image_url || null,
         lat: basePin?.lat || null,
         lng: basePin?.lng || null,
         submitted_by_name: form.driver_name,
@@ -331,6 +334,20 @@ export default function DriverSubmit() {
           <Card title="موقع السائق الأساسي (اختياري)" icon={MapPin}>
             <p className="text-xs text-slate-500 mb-3">حدد المكان الذي تبدأ منه رحلاتك عادةً — يساعد الزبائن القريبين يختاروك.</p>
             <LocationPicker value={basePin} onChange={setBasePin} height={240} />
+          </Card>
+
+          {/* Image upload */}
+          <Card title="صورة للسيارة (اختياري)" icon={Car}>
+            <p className="text-xs text-slate-500 mb-3">
+              صورة واضحة للسيارة أو الميكروباص تعطي الزبون ثقة. لا ترفع صور شخصية
+              أو بيانات بطاقتك الشخصية.
+            </p>
+            <ImageUploader
+              value={form.image_url}
+              onChange={(url) => update('image_url', url || '')}
+              endpoint="/services/submit/upload"
+              label="اختر صورة للسيارة"
+            />
           </Card>
 
           {/* Extra */}

@@ -112,11 +112,6 @@ export default function ServiceDetail() {
                    className="btn bg-sky-600 text-white hover:bg-sky-700 text-sm">
                   <MapPin className="w-4 h-4" /> فتح في خرائط جوجل
                 </a>
-                <a target="_blank" rel="noreferrer"
-                   href={`https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`}
-                   className="btn-outline text-sm">
-                  <MapPin className="w-4 h-4" /> موقع دقيق (إحداثيات)
-                </a>
               </div>
             </div>
           )}

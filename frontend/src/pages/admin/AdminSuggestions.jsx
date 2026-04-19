@@ -34,6 +34,16 @@ export default function AdminSuggestions() {
     await api.put(`/suggestions/${row.id}`, { status });
     toast.success('تم التحديث'); load();
   }
+  // Apply correction to the target service (name/phone/address/image/etc)
+  async function applySugg(row) {
+    try {
+      const r = await api.post(`/suggestions/${row.id}/apply`);
+      toast.success(`تم تطبيق: ${(r.data.applied || []).join('، ') || 'التصحيح'}`);
+      load();
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'تعذّر التطبيق');
+    }
+  }
   async function delSugg(row) {
     if (!confirm('حذف هذا الاقتراح؟')) return;
     await api.delete(`/suggestions/${row.id}`);
@@ -127,7 +137,7 @@ export default function AdminSuggestions() {
               ) : (
                 <div className="grid md:grid-cols-2 gap-3">
                   {suggestions.map((r) => (
-                    <SuggestionCard key={r.id} r={r} onStatus={setSuggStatus} onDelete={delSugg} />
+                    <SuggestionCard key={r.id} r={r} onStatus={setSuggStatus} onApply={applySugg} onDelete={delSugg} />
                   ))}
                 </div>
               )}
@@ -216,7 +226,14 @@ function ServiceCard({ s, onApprove, onReject, onDelete }) {
   );
 }
 
-function SuggestionCard({ r, onStatus, onDelete }) {
+function SuggestionCard({ r, onStatus, onApply, onDelete }) {
+  // Extract attached image URL from the correction message, if any
+  const imgMatch = r.message && String(r.message).match(/📎\s*صورة مرفقة:\s*(\S+)/);
+  const imageUrl = imgMatch ? imgMatch[1] : null;
+
+  // Correction targets an existing service → can be auto-applied via /apply
+  const canApply = r.kind === 'correction' && !!r.service_id;
+
   return (
     <div className="card p-4 border-r-4 border-r-amber-400">
       <div className="flex items-start justify-between gap-3 mb-2">
@@ -226,6 +243,7 @@ function SuggestionCard({ r, onStatus, onDelete }) {
             <span className={`chip ${r.status === 'pending' ? 'bg-amber-50 text-amber-700' : r.status === 'reviewed' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
               {STATUS[r.status]}
             </span>
+            {r.service_id && <span className="chip bg-slate-50 border border-slate-200">خدمة #{r.service_id}</span>}
           </div>
           <h3 className="font-bold text-slate-900">{r.subject || '(بدون عنوان)'}</h3>
           <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
@@ -234,15 +252,34 @@ function SuggestionCard({ r, onStatus, onDelete }) {
         </div>
       </div>
       <p className="text-sm text-slate-700 leading-6 whitespace-pre-wrap">{r.message}</p>
+
+      {imageUrl && (
+        <a href={imageUrl} target="_blank" rel="noreferrer"
+           className="mt-3 block rounded-xl overflow-hidden border border-slate-200 bg-slate-50 hover:ring-2 hover:ring-brand-300 transition">
+          <img src={imageUrl} alt="صورة مرفقة"
+               className="w-full max-h-48 object-cover" loading="lazy"
+               onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }} />
+          <div className="text-[10px] text-slate-500 bg-white px-3 py-1.5 border-t border-slate-100">
+            📎 صورة مرفقة من المستخدم — اضغط للتكبير
+          </div>
+        </a>
+      )}
+
       {(r.name || r.contact) && (
         <div className="mt-3 text-xs text-slate-500">
           من: {r.name || '—'} · تواصل: <span dir="ltr">{r.contact || '—'}</span>
         </div>
       )}
-      <div className="mt-3 flex items-center gap-1 justify-end">
+      <div className="mt-3 flex items-center gap-1 justify-end flex-wrap">
+        {canApply && r.status !== 'reviewed' && (
+          <button onClick={() => onApply(r)}
+            className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold shadow-sm transition">
+            <Check className="w-3.5 h-3.5" /> اعتماد + تطبيق على الخدمة
+          </button>
+        )}
         {r.status !== 'reviewed' && (
           <button onClick={() => onStatus(r, 'reviewed')} className="btn-outline text-emerald-700 text-xs !py-1.5 !px-2.5">
-            <Check className="w-3.5 h-3.5" /> مراجعة
+            <Check className="w-3.5 h-3.5" /> مراجعة فقط
           </button>
         )}
         {r.status !== 'rejected' && (
