@@ -1,0 +1,25 @@
+Options -MultiViews
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|js)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires 0
+  </FilesMatch>
+  <FilesMatch "\.(css|svg|png|jpg|jpeg|webp|gif|ico|woff|woff2|ttf)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+RewriteEngine On
+
+# Hostinger's internal build folder — never expose it
+RewriteRule ^\.builds - [F,L]
+
+# Let /api be handled by Passenger (see api/.htaccess)
+RewriteRule ^api($|/) - [L]
+
+# SPA fallback
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [QSA,L]

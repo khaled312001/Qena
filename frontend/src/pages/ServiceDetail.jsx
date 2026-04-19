@@ -36,6 +36,8 @@ export default function ServiceDetail() {
 
   const cat = s.category || {};
   const hasMap = s.lat && s.lng;
+  // Only show real images — skip Unsplash category fallbacks / empty URLs.
+  const realImage = s.image_url && !s.image_url.toLowerCase().includes('unsplash.com') ? s.image_url : null;
 
   return (
     <div>
@@ -118,6 +120,17 @@ export default function ServiceDetail() {
         </div>
 
         <aside className="space-y-4">
+          {/* Service image — natural aspect ratio (no cropping). Opens full-size
+              on click. `h-auto` + `object-contain` keeps the full image visible. */}
+          {realImage && (
+            <a href={realImage} target="_blank" rel="noreferrer"
+               className="card overflow-hidden block bg-slate-50 hover:ring-2 hover:ring-brand-300 transition">
+              <img src={realImage} alt={s.name}
+                   className="w-full h-auto max-h-96 object-contain"
+                   onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }} />
+            </a>
+          )}
+
           <div className="card p-5">
             <h3 className="font-bold mb-3">اتصل الآن</h3>
             {s.phone ? (
