@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { CheckCircle2, Info } from 'lucide-react';
 import api from '../lib/api.js';
+import LocationPicker from '../components/LocationPicker.jsx';
 
 export default function SubmitService() {
   const [searchParams] = useSearchParams();
@@ -24,9 +25,12 @@ export default function SubmitService() {
     working_hours: '',
     price_range: '',
     website: '',
+    lat: null,
+    lng: null,
     submitted_by_name: '',
     submitted_by_contact: '',
   });
+  const [pin, setPin] = useState(null);
 
   useEffect(() => {
     api.get('/categories').then((r) => setCategories(r.data));
@@ -50,6 +54,7 @@ export default function SubmitService() {
       } else {
         const { type, ...rest } = form;
         if (!rest.category_id) { toast.error('اختر القسم'); setLoading(false); return; }
+        if (pin) { rest.lat = pin.lat; rest.lng = pin.lng; }
         await api.post('/services/submit', rest);
       }
       setSent(true);
@@ -117,6 +122,16 @@ export default function SubmitService() {
               <input className="input" value={form.address} onChange={(e) => update('address', e.target.value)} />
             </Field>
           </div>
+
+          {/* Location picker — only for new service submissions (not corrections) */}
+          {form.type !== 'correction' && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                موقع المكان على الخريطة <span className="text-slate-400 text-xs font-normal">(اختياري لكن مفيد جداً)</span>
+              </label>
+              <LocationPicker value={pin} onChange={setPin} height={260} />
+            </div>
+          )}
 
           <div className="grid md:grid-cols-3 gap-3">
             <Field label="رقم الهاتف">

@@ -85,6 +85,13 @@ export default function CategoryPage() {
   const [dbStats, setDbStats] = useState({ total: 0, withPhone: 0, withMap: 0, withImage: 0 });
   const [dbFacets, setDbFacets] = useState(null); // { tags, cities, categories } from DB, or null → fall back to in-memory
   const [totalInDb, setTotalInDb] = useState(0);
+  // ALL categories (independent of current filter) — used for the top nav chips bar
+  const [allCats, setAllCats] = useState([]);
+
+  // Fetch all active categories once for the top chips bar
+  useEffect(() => {
+    api.get('/categories/with-counts').then((r) => setAllCats(r.data || [])).catch(() => {});
+  }, []);
 
   useEffect(() => { localStorage.setItem('qena_view', view); }, [view]);
 
@@ -484,6 +491,29 @@ export default function CategoryPage() {
         </div>
       </div>
 
+      {/* Top category chips — quick nav between sections, with icons & counts */}
+      {allCats.length > 0 && (
+        <div className="bg-white border-b border-slate-100 sticky top-[6.25rem] sm:top-[6.75rem] z-20 shadow-sm"
+             style={{ backdropFilter: 'saturate(150%) blur(6px)', WebkitBackdropFilter: 'saturate(150%) blur(6px)' }}>
+          <div className="container-p">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-2.5"
+                 style={{ scrollSnapType: 'x proximity' }}>
+              <CatChip to="/category/all" active={!slug || slug === 'all'}
+                iconName="Layers" name="كل الخدمات"
+                count={allCats.reduce((a, c) => a + (c.services_count || 0), 0)}
+                color="#0ea5e9" />
+              {allCats.map((c) => (
+                <CatChip key={c.id} to={`/category/${c.slug}`}
+                  active={slug === c.slug}
+                  iconName={c.icon} name={c.name}
+                  count={c.services_count || 0}
+                  color={c.color || '#0ea5e9'} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Price notice */}
       <div className="container-p pt-4">
         <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs md:text-sm text-amber-900">
@@ -643,5 +673,39 @@ export default function CategoryPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+// Horizontal category chip with icon + count. Active state uses the category's
+// own color; inactive is neutral so the active pill stands out clearly.
+function CatChip({ to, active, iconName, name, count, color }) {
+  return (
+    <Link
+      to={to}
+      className={`shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border transition ${
+        active
+          ? 'text-white shadow-md ring-2 ring-offset-1'
+          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+      }`}
+      style={active ? {
+        backgroundColor: color,
+        borderColor: color,
+        '--tw-ring-color': color + '40',
+      } : { borderColor: undefined }}
+      aria-current={active ? 'page' : undefined}
+    >
+      <span
+        className={`w-7 h-7 rounded-lg flex items-center justify-center ${active ? 'bg-white/20' : ''}`}
+        style={!active ? { backgroundColor: color + '18', color } : {}}
+      >
+        <Icon name={iconName} className="w-4 h-4" />
+      </span>
+      <span className="whitespace-nowrap">{name}</span>
+      {count != null && count > 0 && (
+        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${active ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-600'}`}>
+          {count.toLocaleString('ar-EG')}
+        </span>
+      )}
+    </Link>
   );
 }

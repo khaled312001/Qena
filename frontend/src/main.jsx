@@ -3,11 +3,19 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import App from './App.jsx';
+import ScrollToTop from './components/ScrollToTop.jsx';
 import './styles/index.css';
+
+// Browsers try to restore scroll across navigations; we handle it ourselves
+// via <ScrollToTop /> so route changes always start at the top.
+if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
+      <ScrollToTop />
       <App />
       <Toaster position="top-center" toastOptions={{ style: { fontFamily: 'Cairo' } }} />
     </BrowserRouter>

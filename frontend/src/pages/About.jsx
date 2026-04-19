@@ -13,7 +13,7 @@ export default function About() {
             </div>
             <h1 className="text-3xl md:text-5xl font-extrabold mb-3">عن قناوي</h1>
             <p className="text-white/90 leading-7 sm:leading-8 text-sm sm:text-base md:text-lg">
-              قناوي (qinawy.com) هدية من <b className="text-amber-300">شركة برمجلي</b> لسكان محافظة قنا. مبادرة مجانية بالكامل لتجميع كل المعلومات والخدمات التي يحتاجها المواطن في مكان واحد — من مستشفيات وفنادق ومطاعم وأرقام طوارئ وحتى معالم سياحية.
+              قناوي (qinawy.com) مبادرة مجانية من <b className="text-amber-300">شركة برمجلي</b> لسكان محافظة قنا. تجميع كل المعلومات والخدمات التي يحتاجها المواطن في مكان واحد — من مستشفيات وفنادق ومطاعم وأرقام طوارئ وحتى معالم سياحية.
             </p>
           </motion.div>
         </div>
@@ -42,7 +42,7 @@ export default function About() {
               </div>
               <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3">شركة برمجلي</h2>
               <p className="text-slate-700 leading-8 mb-5">
-                شركة متخصصة في تطوير البرمجيات والحلول الرقمية للشركات والمؤسسات في مصر والوطن العربي. قدّمنا هذه البوابة كـ <b>هدية مجانية</b> لأهل قنا، إيماناً منا بأن التكنولوجيا يجب أن تخدم المجتمع أولاً.
+                شركة متخصصة في تطوير البرمجيات والحلول الرقمية للشركات والمؤسسات في مصر والوطن العربي. قدّمنا هذه البوابة <b>مجاناً بالكامل</b> لأهل قنا، إيماناً منا بأن التكنولوجيا يجب أن تخدم المجتمع أولاً.
               </p>
               <dl className="space-y-3 text-sm">
                 <div className="flex items-center gap-3">

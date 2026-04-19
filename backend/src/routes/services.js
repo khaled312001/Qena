@@ -68,6 +68,58 @@ router.get('/aggregate', async (req, res) => {
   res.json(result);
 });
 
+// Nearest services to a given lat/lng — uses Haversine in SQL so it's fast
+// and does not require fetching every service into Node.
+router.get('/nearby', async (req, res) => {
+  const lat = Number(req.query.lat);
+  const lng = Number(req.query.lng);
+  const limit = Math.min(Number(req.query.limit) || 20, 100);
+  const maxKm = Math.min(Number(req.query.maxKm) || 50, 200);
+  const categorySlug = req.query.category;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return res.status(400).json({ error: 'lat / lng مطلوبين كرقم' });
+  }
+
+  let categoryId = null;
+  if (categorySlug && categorySlug !== 'all') {
+    const cat = await Category.findOne({ where: { slug: categorySlug } });
+    if (!cat) return res.json({ rows: [] });
+    categoryId = cat.id;
+  }
+
+  // Raw Haversine query (km). Using sequelize.query for efficiency.
+  const { sequelize } = require('../models');
+  const params = [lat, lng, lat];
+  let sql = `
+    SELECT s.*, c.slug AS c_slug, c.name AS c_name, c.icon AS c_icon, c.color AS c_color,
+      (6371 * acos(
+        LEAST(1, GREATEST(-1,
+          cos(radians(?)) * cos(radians(s.lat)) * cos(radians(s.lng) - radians(?))
+          + sin(radians(?)) * sin(radians(s.lat))
+        ))
+      )) AS distance_km
+    FROM services s
+    LEFT JOIN categories c ON c.id = s.category_id
+    WHERE s.status = 'approved'
+      AND s.lat IS NOT NULL AND s.lng IS NOT NULL
+  `;
+  if (categoryId) { sql += ' AND s.category_id = ?'; params.push(categoryId); }
+  sql += ' HAVING distance_km <= ? ORDER BY distance_km ASC LIMIT ?';
+  params.push(maxKm, limit);
+
+  const [rows] = await sequelize.query(sql, { replacements: params });
+  // Normalize to the same shape as /services
+  const out = rows.map((r) => ({
+    id: r.id, name: r.name, description: r.description, city: r.city, address: r.address,
+    lat: r.lat, lng: r.lng, phone: r.phone, alt_phone: r.alt_phone, whatsapp: r.whatsapp,
+    website: r.website, working_hours: r.working_hours, price_range: r.price_range,
+    image_url: r.image_url, tags: r.tags, is_featured: !!r.is_featured,
+    distance_km: Number(Number(r.distance_km).toFixed(3)),
+    category: r.c_slug ? { slug: r.c_slug, name: r.c_name, icon: r.c_icon, color: r.c_color } : null,
+  }));
+  res.json({ rows: out });
+});
+
 router.get('/', async (req, res) => {
   const {
     category,

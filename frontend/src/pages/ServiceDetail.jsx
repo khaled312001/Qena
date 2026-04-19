@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Phone, MapPin, Clock, DollarSign, Globe, MessageCircle, ChevronRight, ArrowLeft, Info } from 'lucide-react';
+import { Phone, MapPin, Clock, DollarSign, Globe, MessageCircle, ChevronRight, Edit3, Info } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import api from '../lib/api.js';
 import { Icon } from '../lib/icons.jsx';
 import AdSlot from '../components/AdSlot.jsx';
+import CorrectionModal from '../components/CorrectionModal.jsx';
 
 // Default marker fix for Leaflet + Vite
 const markerIcon = new L.Icon({
@@ -19,6 +20,7 @@ export default function ServiceDetail() {
   const { id } = useParams();
   const [s, setS] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [correcting, setCorrecting] = useState(false);
 
   useEffect(() => {
     api.get(`/services/${id}`).then((r) => setS(r.data)).finally(() => setLoading(false));
@@ -58,7 +60,7 @@ export default function ServiceDetail() {
             <div className="flex-1 min-w-0">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 break-words">{s.name}</h1>
               {cat.name && <div className="text-xs sm:text-sm text-slate-500 mt-0.5">{cat.name}{s.city ? ` · ${s.city}` : ''}</div>}
-              {s.description && <p className="text-slate-600 mt-3 leading-7 text-sm sm:text-base">{s.description}</p>}
+              {s.description && <p className="text-slate-600 mt-3 leading-7 text-sm sm:text-base whitespace-pre-line">{s.description}</p>}
             </div>
           </div>
         </div>
@@ -82,7 +84,7 @@ export default function ServiceDetail() {
               <div className="leading-6">
                 <b>تنبيه:</b> الأسعار ومواعيد العمل قابلة للتعديل في أي وقت من قبل صاحب المكان.
                 يُرجى التأكد من البيانات عبر الاتصال المباشر قبل الزيارة. إن لاحظت خطأً، أرسل لنا
-                <Link to={`/submit?type=correction&service=${s.id}`} className="text-amber-950 font-bold hover:underline px-1">تصحيحاً</Link>.
+                <button type="button" onClick={() => setCorrecting(true)} className="text-amber-950 font-bold hover:underline px-1">تصحيحاً</button>.
               </div>
             </div>
           </div>
@@ -151,16 +153,20 @@ export default function ServiceDetail() {
 
           <div className="card p-5">
             <h3 className="font-bold mb-2">هل المعلومات غير صحيحة؟</h3>
-            <p className="text-sm text-slate-500 mb-3">ساعدنا بتصحيح البيانات</p>
-            <Link to={`/submit?type=correction&service=${s.id}`} className="btn-outline w-full justify-center">
-              <ArrowLeft className="w-4 h-4" /> إرسال تصحيح
-            </Link>
+            <p className="text-sm text-slate-500 mb-3">صحح حقل واحد فقط (الاسم / الهاتف / العنوان / الموقع) في ثوانٍ.</p>
+            <button type="button" onClick={() => setCorrecting(true)} className="btn-outline w-full justify-center">
+              <Edit3 className="w-4 h-4" /> إرسال تصحيح
+            </button>
           </div>
 
           {/* Sidebar ad slot — non-intrusive, won't show unless configured */}
           <AdSlot slot={AdSlot.SIDEBAR || AdSlot.INLINE} format="auto" />
         </aside>
       </section>
+
+      {correcting && (
+        <CorrectionModal service={s} onClose={() => setCorrecting(false)} />
+      )}
     </div>
   );
 }

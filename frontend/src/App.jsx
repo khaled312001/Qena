@@ -8,6 +8,9 @@ import SubmitService from './pages/SubmitService.jsx';
 import PublicNumbersPage from './pages/PublicNumbersPage.jsx';
 import About from './pages/About.jsx';
 import QenaAbout from './pages/QenaAbout.jsx';
+import NearbyPage from './pages/NearbyPage.jsx';
+import DriverSubmit from './pages/DriverSubmit.jsx';
+import RentalSubmit from './pages/RentalSubmit.jsx';
 import NotFound from './pages/NotFound.jsx';
 import AdminLogin from './pages/admin/AdminLogin.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
@@ -27,6 +30,9 @@ export default function App() {
         <Route path="/numbers" element={<PublicNumbersPage />} />
         <Route path="/about" element={<About />} />
         <Route path="/qena" element={<QenaAbout />} />
+        <Route path="/nearby" element={<NearbyPage />} />
+        <Route path="/submit/driver" element={<DriverSubmit />} />
+        <Route path="/submit/rental" element={<RentalSubmit />} />
         <Route path="*" element={<NotFound />} />
       </Route>
 

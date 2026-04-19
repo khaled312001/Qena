@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Phone, Plus, ChevronLeft, Scroll, Sparkles, MapPin, Heart, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Phone, Plus, ChevronLeft, Scroll, Sparkles, MapPin, Heart, CheckCircle2, ShieldCheck, Navigation } from 'lucide-react';
 import api from '../lib/api.js';
 import { Icon } from '../lib/icons.jsx';
 import ServiceCard from '../components/ServiceCard.jsx';
@@ -107,6 +107,10 @@ export default function Home() {
 
               {/* Actions */}
               <div className="mt-5 sm:mt-6 flex flex-wrap items-center gap-2">
+                <Link to="/nearby"
+                  className="btn bg-emerald-500 text-white hover:bg-emerald-600 font-bold shadow-lg shadow-emerald-500/30">
+                  <Navigation className="w-4 h-4" /> الأقرب إليك الآن
+                </Link>
                 <Link to="/numbers" className="btn bg-white/10 text-white hover:bg-white/20 backdrop-blur border border-white/15">
                   <Phone className="w-4 h-4" /> أرقام طوارئ
                 </Link>
@@ -114,7 +118,10 @@ export default function Home() {
                   <Scroll className="w-4 h-4" /> عن قنا
                 </Link>
                 <Link to="/submit" className="btn bg-amber-400 text-amber-950 hover:bg-amber-300 font-bold shadow-lg shadow-amber-400/25">
-                  <Plus className="w-4 h-4" /> أضف خدمتك مجاناً
+                  <Plus className="w-4 h-4" /> أضف خدمتك
+                </Link>
+                <Link to="/submit/driver" className="btn bg-white/10 text-white hover:bg-white/20 backdrop-blur border border-white/15">
+                  <Plus className="w-4 h-4" /> سجّل كسائق
                 </Link>
               </div>
 

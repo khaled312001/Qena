@@ -1,24 +1,27 @@
 import { Outlet, Link, NavLink, useLocation } from 'react-router-dom';
-import { Menu, Phone, Plus, Info, Home, X, MapPin, Scroll } from 'lucide-react';
+import { Menu, Phone, Plus, Info, Home, X, MapPin, Scroll, Navigation, Car, BedDouble } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const links = [
   { to: '/', label: 'الرئيسية', icon: Home },
+  { to: '/nearby', label: 'الأقرب إليك', icon: Navigation },
   { to: '/category/all', label: 'الخدمات', icon: MapPin },
   { to: '/numbers', label: 'أرقام مهمة', icon: Phone },
   { to: '/qena', label: 'عن قنا', icon: Scroll },
   { to: '/submit', label: 'أضف خدمة', icon: Plus },
+  { to: '/submit/driver', label: 'سجّل كسائق', icon: Car },
+  { to: '/submit/rental', label: 'اعرض سكن', icon: BedDouble },
   { to: '/about', label: 'عن الموقع', icon: Info },
 ];
 
 // Bottom tab bar on mobile — main 5 destinations
 const tabBarLinks = [
   { to: '/', label: 'الرئيسية', icon: Home, end: true },
+  { to: '/nearby', label: 'الأقرب', icon: Navigation },
   { to: '/category/all', label: 'الخدمات', icon: MapPin },
   { to: '/numbers', label: 'أرقام', icon: Phone },
   { to: '/submit', label: 'أضف', icon: Plus },
-  { to: '/qena', label: 'قنا', icon: Scroll },
 ];
 
 export default function PublicLayout() {
@@ -30,19 +33,43 @@ export default function PublicLayout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Barmagly attribution bar */}
-      <div className="bg-gradient-to-l from-brand-900 via-brand-800 to-brand-900 text-white text-[11px] sm:text-xs">
-        <div className="container-p flex items-center justify-between h-9 gap-3">
-          <div className="flex items-center gap-2 truncate">
-            <span className="hidden sm:inline">🎁 خدمة مجانية لكل سكان محافظة قنا — مقدمة من</span>
-            <span className="sm:hidden">🎁 مجاناً من</span>
-            <a href="https://barmagly.tech/" target="_blank" rel="noreferrer"
-               className="font-bold hover:text-amber-300 transition">شركة برمجلي</a>
+      {/* Barmagly attribution bar — seamless RTL marquee */}
+      <div className="bg-gradient-to-l from-brand-900 via-brand-800 to-brand-900 text-white text-[12px] sm:text-xs relative overflow-hidden">
+        <div className="relative h-9 flex items-center"
+          style={{
+            maskImage: 'linear-gradient(to left, transparent, black 4%, black 96%, transparent)',
+            WebkitMaskImage: 'linear-gradient(to left, transparent, black 4%, black 96%, transparent)',
+          }}>
+          <div className="flex items-center gap-10 w-max topbar-marquee">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <span key={i} className="inline-flex items-center gap-2 whitespace-nowrap">
+                <span className="opacity-90">دليل قنا الشامل · مقدم من</span>
+                <a href="https://barmagly.tech/" target="_blank" rel="noreferrer"
+                   className="font-extrabold text-amber-300 hover:text-amber-200 transition">شركة برمجلي</a>
+                <span className="opacity-70">|</span>
+                <a href="tel:01010254819" dir="ltr" className="inline-flex items-center gap-1 hover:text-amber-300 transition">
+                  <Phone className="w-3 h-3" /> 01010254819
+                </a>
+                <span className="opacity-60 mx-2">✦</span>
+                <a href="https://barmagly.tech/" target="_blank" rel="noreferrer"
+                   className="hover:text-amber-300 transition">barmagly.tech</a>
+                <span className="opacity-60 mx-2">✦</span>
+              </span>
+            ))}
           </div>
-          <a href="tel:01010254819" dir="ltr" className="hidden sm:inline-flex items-center gap-1 hover:text-amber-300 transition">
-            <Phone className="w-3 h-3" /> 01010254819
-          </a>
         </div>
+        <style>{`
+          .topbar-marquee {
+            animation: topbar-rtl 28s linear infinite;
+            will-change: transform;
+          }
+          .topbar-marquee:hover { animation-play-state: paused; }
+          @keyframes topbar-rtl {
+            from { transform: translate3d(0, 0, 0); }
+            to   { transform: translate3d(50%, 0, 0); }
+          }
+          @media (prefers-reduced-motion: reduce) { .topbar-marquee { animation: none; } }
+        `}</style>
       </div>
 
       {/* Header */}
@@ -134,16 +161,38 @@ export default function PublicLayout() {
 
       {/* Footer */}
       <footer className="bg-gradient-to-b from-slate-900 to-slate-950 text-slate-300 mt-12">
-        <div className="bg-gradient-to-l from-amber-500 via-amber-600 to-amber-500 text-slate-900">
-          <div className="container-p py-4 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-right">
-            <div className="font-bold text-sm md:text-base">
-              🎁 هذا الموقع مجاني بالكامل — مصمم ومقدم من{' '}
-              <a href="https://barmagly.tech/" target="_blank" rel="noreferrer" className="underline decoration-dotted hover:text-amber-900">شركة برمجلي</a>{' '}
-              هدية لسكان محافظة قنا
+        {/* Barmagly sponsor banner — clean, minimal, branded */}
+        <div className="relative overflow-hidden border-b border-white/5"
+             style={{ backgroundImage: 'linear-gradient(110deg, #0f172a 0%, #0c4a6e 45%, #075985 100%)' }}>
+          <div className="absolute -top-8 -left-10 w-56 h-56 rounded-full bg-brand-400/10 blur-3xl" />
+          <div className="absolute -bottom-8 right-10 w-48 h-48 rounded-full bg-amber-400/10 blur-3xl" />
+          <div className="container-p py-5 relative">
+            <div className="flex flex-col sm:flex-row items-center sm:items-stretch justify-between gap-4">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                <div className="w-11 h-11 sm:w-12 sm:h-12 shrink-0 rounded-xl bg-white/10 ring-1 ring-white/15 flex items-center justify-center">
+                  <img src="/logo.svg" className="w-7 h-7 sm:w-8 sm:h-8" alt="" />
+                </div>
+                <div className="leading-tight text-white text-right min-w-0">
+                  <div className="text-[11px] sm:text-xs text-brand-200 font-medium">مصمم ومقدم من</div>
+                  <a href="https://barmagly.tech/" target="_blank" rel="noreferrer"
+                     className="font-extrabold text-base sm:text-lg hover:text-amber-300 transition truncate block">
+                    شركة برمجلي
+                  </a>
+                  <div className="text-[11px] sm:text-xs text-slate-300/80 mt-0.5">مبادرة مجانية لخدمة أهل محافظة قنا</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a href="tel:01010254819" dir="ltr"
+                   className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-300 text-amber-950 px-4 py-2 rounded-xl font-extrabold shadow-lg shadow-amber-400/20 transition">
+                  <Phone className="w-4 h-4" />
+                  <span>01010254819</span>
+                </a>
+                <a href="https://barmagly.tech/" target="_blank" rel="noreferrer"
+                   className="hidden sm:inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/15 border border-white/15 text-white px-3 py-2 rounded-xl text-sm font-semibold transition">
+                  barmagly.tech ↗
+                </a>
+              </div>
             </div>
-            <a href="tel:01010254819" dir="ltr" className="inline-flex items-center gap-2 bg-slate-900 text-amber-300 px-4 py-1.5 rounded-full font-bold hover:bg-slate-800 transition whitespace-nowrap">
-              <Phone className="w-4 h-4" /> 01010254819
-            </a>
           </div>
         </div>
         <div className="container-p py-10 md:py-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
@@ -159,7 +208,7 @@ export default function PublicLayout() {
               </div>
             </div>
             <p className="text-sm leading-7 text-slate-400">
-              مبادرة خيرية مجانية تجمع كل الخدمات والأرقام المهمة التي يحتاجها المواطن في محافظة قنا — مستشفيات، فنادق، مطاعم، أرقام طوارئ، ومعالم سياحية — في مكان واحد. مصممة ومقدمة مجاناً من{' '}
+              مبادرة مجانية تجمع كل الخدمات والأرقام المهمة التي يحتاجها المواطن في محافظة قنا — مستشفيات، فنادق، مطاعم، أرقام طوارئ، ومعالم سياحية — في مكان واحد. مصممة ومقدمة مجاناً من{' '}
               <a href="https://barmagly.tech/" target="_blank" rel="noreferrer" className="text-amber-300 hover:text-amber-200 font-semibold">شركة برمجلي</a>.
             </p>
           </div>
