@@ -13,3 +13,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </React.StrictMode>
 );
+
+// Register the service worker (enables PWA install + APK/TWA wrapping)
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}

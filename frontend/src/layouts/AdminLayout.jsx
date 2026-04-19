@@ -31,11 +31,14 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen flex bg-slate-50">
-      <aside className={`fixed lg:static inset-y-0 right-0 z-40 w-72 bg-white border-l border-slate-100 transition-transform ${open ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
+      {open && (
+        <div className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={() => setOpen(false)} />
+      )}
+      <aside className={`fixed lg:static inset-y-0 right-0 z-40 w-[85vw] max-w-xs lg:w-72 bg-white border-l border-slate-100 transition-transform ${open ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
         <div className="h-16 px-5 flex items-center gap-2.5 border-b border-slate-100">
           <img src="/logo.svg" alt="" className="w-8 h-8" />
           <div className="leading-tight">
-            <div className="font-bold">دليل قنا</div>
+            <div className="font-bold">قناوي</div>
             <div className="text-xs text-slate-500">لوحة الإدارة</div>
           </div>
           <button className="ml-auto lg:hidden btn-ghost" onClick={() => setOpen(false)}><X className="w-5 h-5" /></button>

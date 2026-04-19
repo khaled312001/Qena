@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Phone, MapPin, Clock, DollarSign, Globe, MessageCircle, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Phone, MapPin, Clock, DollarSign, Globe, MessageCircle, ChevronRight, ArrowLeft, Info } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import api from '../lib/api.js';
@@ -37,33 +37,33 @@ export default function ServiceDetail() {
   return (
     <div>
       <div className="bg-gradient-to-bl from-brand-50/60 to-white border-b border-slate-100">
-        <div className="container-p py-8">
-          <div className="flex items-center gap-2 text-sm text-slate-500 mb-3">
+        <div className="container-p py-6 sm:py-8">
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 mb-3 flex-wrap">
             <Link to="/" className="hover:text-brand-600">الرئيسية</Link>
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             {cat.slug && (
               <>
                 <Link to={`/category/${cat.slug}`} className="hover:text-brand-600">{cat.name}</Link>
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </>
             )}
-            <span className="truncate">{s.name}</span>
+            <span className="truncate max-w-[60%]">{s.name}</span>
           </div>
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0"
                  style={{ backgroundColor: (cat.color || '#0ea5e9') + '15', color: cat.color || '#0ea5e9' }}>
-              <Icon name={cat.icon} className="w-7 h-7" />
+              <Icon name={cat.icon} className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
-            <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900">{s.name}</h1>
-              {cat.name && <div className="text-sm text-slate-500 mt-0.5">{cat.name} · {s.city}</div>}
-              {s.description && <p className="text-slate-600 mt-3 leading-7">{s.description}</p>}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 break-words">{s.name}</h1>
+              {cat.name && <div className="text-xs sm:text-sm text-slate-500 mt-0.5">{cat.name}{s.city ? ` · ${s.city}` : ''}</div>}
+              {s.description && <p className="text-slate-600 mt-3 leading-7 text-sm sm:text-base">{s.description}</p>}
             </div>
           </div>
         </div>
       </div>
 
-      <section className="container-p py-8 grid lg:grid-cols-3 gap-6">
+      <section className="container-p py-6 sm:py-8 grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4">
           <div className="card p-5">
             <h2 className="font-bold text-slate-900 mb-4">معلومات الاتصال والعنوان</h2>
@@ -76,6 +76,14 @@ export default function ServiceDetail() {
               <Row icon={DollarSign} label="الأسعار" value={s.price_range} />
               <Row icon={Globe} label="الموقع الإلكتروني" value={s.website} href={s.website} />
             </dl>
+            <div className="mt-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+              <Info className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="leading-6">
+                <b>تنبيه:</b> الأسعار ومواعيد العمل قابلة للتعديل في أي وقت من قبل صاحب المكان.
+                يُرجى التأكد من البيانات عبر الاتصال المباشر قبل الزيارة. إن لاحظت خطأً، أرسل لنا
+                <Link to={`/submit?type=correction&service=${s.id}`} className="text-amber-950 font-bold hover:underline px-1">تصحيحاً</Link>.
+              </div>
+            </div>
           </div>
 
           {hasMap && (
@@ -138,15 +146,17 @@ export default function ServiceDetail() {
 function Row({ icon: Ic, label, value, href }) {
   if (!value) return null;
   return (
-    <div className="flex items-center gap-3 py-3">
-      <Ic className="w-4 h-4 text-slate-400 shrink-0" />
-      <div className="text-sm text-slate-500 w-28 shrink-0">{label}</div>
-      {href ? (
-        <a href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noreferrer"
-           className="text-brand-700 hover:text-brand-800 font-medium break-all">{value}</a>
-      ) : (
-        <span className="text-slate-800 break-all">{value}</span>
-      )}
+    <div className="flex items-start gap-3 py-3">
+      <Ic className="w-4 h-4 text-slate-400 shrink-0 mt-1" />
+      <div className="text-xs sm:text-sm text-slate-500 w-20 sm:w-28 shrink-0 pt-0.5">{label}</div>
+      <div className="flex-1 min-w-0">
+        {href ? (
+          <a href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noreferrer"
+             className="text-brand-700 hover:text-brand-800 font-medium break-words text-sm sm:text-base">{value}</a>
+        ) : (
+          <span className="text-slate-800 break-words text-sm sm:text-base">{value}</span>
+        )}
+      </div>
     </div>
   );
 }

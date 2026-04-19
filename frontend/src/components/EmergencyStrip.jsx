@@ -13,7 +13,7 @@ export default function EmergencyStrip() {
   if (!items.length) return null;
   return (
     <section className="border-b border-slate-100 bg-red-50/40">
-      <div className="container-p py-3 flex items-center gap-3 overflow-x-auto no-scrollbar">
+      <div className="container-p py-3 flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar">
         <span className="tag-emergency shrink-0">
           <AlertTriangle className="w-3.5 h-3.5" /> أرقام طوارئ
         </span>

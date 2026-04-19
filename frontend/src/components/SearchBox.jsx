@@ -67,15 +67,17 @@ export default function SearchBox({ autoFocus = false, variant = 'light' }) {
   return (
     <div ref={boxRef} className="relative w-full max-w-xl">
       <form onSubmit={submit}
-        className={`flex items-center gap-2 rounded-2xl p-2 shadow-2xl ${variant === 'light' ? 'bg-white' : 'bg-white/90 backdrop-blur'}`}>
-        <div className="w-9 h-9 flex items-center justify-center text-slate-400">
+        className={`flex items-center gap-1.5 sm:gap-2 rounded-2xl p-1.5 sm:p-2 shadow-2xl ${variant === 'light' ? 'bg-white' : 'bg-white/90 backdrop-blur'}`}>
+        <div className="w-9 h-9 flex items-center justify-center text-slate-400 shrink-0">
           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
         </div>
         <input value={q} onChange={(e) => setQ(e.target.value)} onFocus={() => q.length >= 2 && setOpen(true)} onKeyDown={onKey}
           autoFocus={autoFocus}
-          className="flex-1 bg-transparent outline-none text-slate-800 placeholder:text-slate-400 px-1"
+          inputMode="search"
+          enterKeyHint="search"
+          className="flex-1 min-w-0 bg-transparent outline-none text-slate-800 placeholder:text-slate-400 px-1 text-sm sm:text-base"
           placeholder="ابحث عن مستشفى، فندق، صيدلية..." />
-        <button type="submit" className="btn-primary">بحث</button>
+        <button type="submit" className="btn-primary !px-3 sm:!px-4 shrink-0">بحث</button>
       </form>
 
       {open && q.trim().length >= 2 && (

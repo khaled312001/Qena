@@ -1,0 +1,29 @@
+{
+  "name": "قناوي — دليل قنا",
+  "short_name": "قناوي",
+  "description": "دليل شامل لسكان محافظة قنا — مستشفيات، فنادق، مطاعم، أرقام طوارئ ومعالم سياحية. مجاناً من شركة برمجلي.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#0c4a6e",
+  "categories": ["utilities", "lifestyle", "travel"],
+  "icons": [
+    { "src": "/favicon.svg",           "sizes": "any",      "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/logo.svg",              "sizes": "any",      "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icons/icon-192.png",    "sizes": "192x192",  "type": "image/png",     "purpose": "any" },
+    { "src": "/icons/icon-512.png",    "sizes": "512x512",  "type": "image/png",     "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-maskable.svg",     "sizes": "any",      "type": "image/svg+xml", "purpose": "maskable" },
+    { "src": "/apple-touch-icon.svg",  "sizes": "180x180",  "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "أرقام مهمة",       "short_name": "أرقام",     "url": "/numbers",        "icons": [{ "src": "/favicon.svg", "sizes": "any" }] },
+    { "name": "كل الخدمات",       "short_name": "الخدمات",   "url": "/category/all",   "icons": [{ "src": "/favicon.svg", "sizes": "any" }] },
+    { "name": "أضف خدمة",         "short_name": "أضف",       "url": "/submit",         "icons": [{ "src": "/favicon.svg", "sizes": "any" }] },
+    { "name": "عن قنا",           "short_name": "قنا",       "url": "/qena",           "icons": [{ "src": "/favicon.svg", "sizes": "any" }] }
+  ]
+}

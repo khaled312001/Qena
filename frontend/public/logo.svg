@@ -1,31 +1,55 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img" aria-label="قناوي">
   <defs>
-    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0" stop-color="#075985"/>
+    <linearGradient id="qnBg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0ea5e9"/>
+      <stop offset=".55" stop-color="#075985"/>
       <stop offset="1" stop-color="#0c4a6e"/>
     </linearGradient>
-    <linearGradient id="gold" x1="0" x2="0" y1="0" y2="1">
-      <stop offset="0" stop-color="#fbbf24"/>
+    <linearGradient id="qnGold" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fde68a"/>
+      <stop offset=".45" stop-color="#fbbf24"/>
       <stop offset="1" stop-color="#d97706"/>
     </linearGradient>
+    <linearGradient id="qnSand" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="qnGlow" cx=".5" cy=".38" r=".55">
+      <stop offset="0" stop-color="#fde68a" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#fde68a" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
-  <!-- Gateway arch -->
-  <path d="M14 48 V28 A18 18 0 0 1 50 28 V48" stroke="url(#gold)" stroke-width="3.2" fill="none" stroke-linecap="round"/>
-  <path d="M18 48 V30 A14 14 0 0 1 46 30 V48" fill="#0b3a55" opacity="0.55"/>
-  <!-- Sun inside the arch -->
-  <circle cx="32" cy="26" r="5.5" fill="url(#gold)"/>
-  <g stroke="url(#gold)" stroke-width="1.6" stroke-linecap="round">
-    <path d="M32 13 V18"/>
-    <path d="M32 34 V39"/>
-    <path d="M19 26 H24"/>
-    <path d="M40 26 H45"/>
-    <path d="M22.5 16.5 L25.8 19.8"/>
-    <path d="M38.2 32.2 L41.5 35.5"/>
-    <path d="M41.5 16.5 L38.2 19.8"/>
-    <path d="M25.8 32.2 L22.5 35.5"/>
+
+  <!-- Background tile -->
+  <rect width="512" height="512" rx="112" fill="url(#qnBg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#qnGlow)"/>
+  <rect x="12" y="12" width="488" height="488" rx="102" fill="url(#qnSand)"/>
+
+  <!-- Golden sun -->
+  <circle cx="256" cy="168" r="46" fill="url(#qnGold)"/>
+  <g stroke="url(#qnGold)" stroke-width="9" stroke-linecap="round" opacity=".95">
+    <line x1="256" y1="86"  x2="256" y2="106"/>
+    <line x1="184" y1="168" x2="204" y2="168"/>
+    <line x1="308" y1="168" x2="328" y2="168"/>
+    <line x1="202" y1="114" x2="216" y2="128"/>
+    <line x1="296" y1="128" x2="310" y2="114"/>
   </g>
-  <!-- Nile wave under the gate -->
-  <path d="M12 52 Q20 48 28 52 T44 52 T56 52" stroke="#38bdf8" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-  <path d="M12 56 Q20 52 28 56 T44 56 T56 56" stroke="#7dd3fc" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.8"/>
+
+  <!-- Gateway arch (Qena / Dendera inspired) framing the sun -->
+  <path d="M104 360 V260 A152 152 0 0 1 408 260 V360"
+        stroke="url(#qnGold)" stroke-width="22" fill="none" stroke-linecap="round"/>
+  <path d="M138 360 V268 A118 118 0 0 1 374 268 V360"
+        fill="#083349" opacity=".55"/>
+
+  <!-- Two decorative dots of ق (subtle) -->
+  <circle cx="234" cy="140" r="7" fill="#ffffff" opacity=".85"/>
+  <circle cx="278" cy="140" r="7" fill="#ffffff" opacity=".85"/>
+
+  <!-- Nile waves -->
+  <path d="M72 398 Q128 378 184 398 T296 398 T408 398 T456 390"
+        stroke="#7dd3fc" stroke-width="14" fill="none" stroke-linecap="round" opacity=".95"/>
+  <path d="M72 432 Q128 412 184 432 T296 432 T408 432 T456 424"
+        stroke="#38bdf8" stroke-width="11" fill="none" stroke-linecap="round" opacity=".8"/>
+  <path d="M72 462 Q128 446 184 462 T296 462 T408 462 T456 458"
+        stroke="#bae6fd" stroke-width="8"  fill="none" stroke-linecap="round" opacity=".55"/>
 </svg>

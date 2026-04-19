@@ -11,9 +11,9 @@ export default function About() {
             <div className="inline-flex items-center gap-2 bg-white/15 px-3 py-1.5 rounded-full text-xs mb-4">
               <Heart className="w-4 h-4" /> مبادرة خيرية مجانية — لا إعلانات، لا رسوم
             </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold mb-3">عن بوابة قنا</h1>
-            <p className="text-white/90 leading-8 text-base md:text-lg">
-              بوابة قنا هدية من <b className="text-amber-300">شركة برمجلي</b> لسكان محافظة قنا. مبادرة مجانية بالكامل لتجميع كل المعلومات والخدمات التي يحتاجها المواطن في مكان واحد — من مستشفيات وفنادق ومطاعم وأرقام طوارئ وحتى معالم سياحية.
+            <h1 className="text-3xl md:text-5xl font-extrabold mb-3">عن قناوي</h1>
+            <p className="text-white/90 leading-7 sm:leading-8 text-sm sm:text-base md:text-lg">
+              قناوي (qinawy.com) هدية من <b className="text-amber-300">شركة برمجلي</b> لسكان محافظة قنا. مبادرة مجانية بالكامل لتجميع كل المعلومات والخدمات التي يحتاجها المواطن في مكان واحد — من مستشفيات وفنادق ومطاعم وأرقام طوارئ وحتى معالم سياحية.
             </p>
           </motion.div>
         </div>

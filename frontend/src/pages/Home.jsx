@@ -35,21 +35,21 @@ export default function Home() {
         <div className="absolute -top-20 -left-20 w-80 h-80 bg-amber-400/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-sky-400/10 rounded-full blur-3xl" />
 
-        <div className="container-p relative py-16 md:py-24 text-white">
+        <div className="container-p relative py-12 sm:py-16 md:py-24 text-white">
           <div className="grid lg:grid-cols-[1.4fr,1fr] gap-10 items-center">
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <div className="inline-flex items-center gap-2 bg-white/15 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur mb-4">
+              <div className="inline-flex items-center gap-2 bg-white/15 text-white text-[11px] sm:text-xs px-3 py-1.5 rounded-full backdrop-blur mb-4">
                 <Sparkles className="w-3.5 h-3.5" /> خدمة مجانية لسكان محافظة قنا · مقدمة من برمجلي
               </div>
-              <h1 className="text-4xl md:text-6xl font-extrabold leading-[1.15] mb-4" style={{ fontFamily: 'Cairo, sans-serif' }}>
-                بوابة قنا
+              <h1 className="text-[2.25rem] leading-[1.1] sm:text-5xl md:text-6xl font-extrabold mb-4" style={{ fontFamily: 'Cairo, sans-serif' }}>
+                قناوي
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-l from-amber-300 via-yellow-300 to-amber-200">
                   عروس الصعيد
                 </span>{' '}
                 في إيدك
               </h1>
-              <p className="text-white/90 text-base md:text-lg leading-8 max-w-xl">
+              <p className="text-white/90 text-sm sm:text-base md:text-lg leading-7 sm:leading-8 max-w-xl">
                 دليل مجاني شامل لكل الخدمات في قنا — مستشفيات، فنادق، مطاعم، كافيهات، محلات، بنوك، أرقام طوارئ، ومعالم سياحية — بإحداثيات دقيقة على الخريطة.
               </p>
               <div className="mt-7">
@@ -92,34 +92,34 @@ export default function Home() {
       <EmergencyStrip />
 
       {/* Categories */}
-      <section className="container-p py-12">
-        <div className="flex items-end justify-between mb-6">
+      <section className="container-p py-8 sm:py-12">
+        <div className="flex items-end justify-between mb-5 sm:mb-6">
           <div>
-            <div className="text-brand-600 text-sm font-semibold mb-1">تصفح الخدمات</div>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900">أقسام البوابة</h2>
-            <p className="text-sm text-slate-500 mt-1">اختر القسم لتصفح جميع الخدمات المتاحة في محافظة قنا</p>
+            <div className="text-brand-600 text-xs sm:text-sm font-semibold mb-1">تصفح الخدمات</div>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900">أقسام الدليل</h2>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">اختر القسم لتصفح جميع الخدمات المتاحة في محافظة قنا</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">
           {loading && Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="card p-5 h-32 animate-pulse bg-slate-100" />
+            <div key={i} className="card p-4 sm:p-5 h-28 sm:h-32 animate-pulse bg-slate-100" />
           ))}
           {!loading && categories.map((c, i) => (
             <motion.div key={c.id}
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}>
               <Link to={`/category/${c.slug}`}
-                className="card p-5 h-full flex flex-col hover:-translate-y-1 hover:shadow-soft transition group relative overflow-hidden">
-                <div className="absolute -top-4 -left-4 w-24 h-24 rounded-full opacity-[0.08] group-hover:opacity-[0.14] transition"
+                className="card p-4 sm:p-5 h-full flex flex-col hover:-translate-y-1 hover:shadow-soft transition group relative overflow-hidden">
+                <div className="absolute -top-4 -left-4 w-20 h-20 sm:w-24 sm:h-24 rounded-full opacity-[0.08] group-hover:opacity-[0.14] transition"
                   style={{ backgroundColor: c.color || '#0ea5e9' }} />
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3 relative"
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center mb-2.5 sm:mb-3 relative"
                   style={{ backgroundColor: (c.color || '#0ea5e9') + '18', color: c.color || '#0ea5e9' }}>
-                  <Icon name={c.icon} className="w-6 h-6" />
+                  <Icon name={c.icon} className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
-                <div className="font-bold text-slate-900 mb-0.5">{c.name}</div>
-                <div className="text-xs text-slate-500">{c.services_count || 0} خدمة متاحة</div>
-                <ChevronLeft className="w-5 h-5 text-slate-300 group-hover:text-brand-500 transition absolute top-5 left-5" />
+                <div className="font-bold text-slate-900 mb-0.5 text-sm sm:text-base leading-snug">{c.name}</div>
+                <div className="text-[11px] sm:text-xs text-slate-500">{c.services_count || 0} خدمة</div>
+                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-slate-300 group-hover:text-brand-500 transition absolute top-4 left-4 sm:top-5 sm:left-5" />
               </Link>
             </motion.div>
           ))}

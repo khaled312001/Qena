@@ -21,7 +21,7 @@ export default function ServiceCard({ s }) {
   return (
     <Link to={`/service/${s.id}`}
       className="card overflow-hidden flex flex-col hover:shadow-soft hover:-translate-y-1 transition group">
-      <div className="h-40 relative overflow-hidden">
+      <div className="h-36 sm:h-40 relative overflow-hidden">
         {showImage ? (
           <img src={s.image_url} alt={s.name} loading="lazy"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

@@ -29,8 +29,8 @@ export default function AdminLogin() {
         <Link to="/" className="flex items-center gap-2.5 mb-6">
           <img src="/logo.svg" className="w-10 h-10" alt="" />
           <div>
-            <div className="font-extrabold text-lg">دليل قنا</div>
-            <div className="text-xs text-slate-500">لوحة الإدارة</div>
+            <div className="font-extrabold text-lg">قناوي</div>
+            <div className="text-xs text-slate-500">لوحة الإدارة · دليل قنا</div>
           </div>
         </Link>
         <h1 className="text-xl font-bold mb-1">تسجيل الدخول</h1>
