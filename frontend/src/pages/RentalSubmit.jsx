@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import api from '../lib/api.js';
 import LocationPicker from '../components/LocationPicker.jsx';
+import ApprovedMarquee from '../components/ApprovedMarquee.jsx';
 
 const PROPERTY_TYPES = [
   { id: 'apartment', label: 'شقة كاملة', icon: Home,      desc: 'تأجير شقة كاملة' },
@@ -38,9 +39,11 @@ const AMENITIES = [
   { id: 'near_uni',         label: 'قريب من الجامعة',  icon: GraduationCap },
 ];
 
+// Examples of well-known landmarks near Qena University — students & owners
+// recognize these by name, so chips help auto-fill but the address field stays free.
 const QENA_AREAS = [
-  'جامعة قنا', 'وسط المدينة', 'السيل', 'الخزندارة',
-  'شارع الجيش', 'شارع الجمهورية', 'البر الغربي', 'نجع حمادي', 'قفط', 'قوص', 'دشنا',
+  'الشئون', 'دردشة المساكن', 'حوض 10', 'شارع الجميل', 'البنزيون',
+  'جامعة قنا', 'الكلية', 'وسط المدينة',
 ];
 
 export default function RentalSubmit() {
@@ -90,11 +93,13 @@ export default function RentalSubmit() {
     setLoading(true);
     try {
       // Name: "<property> — <area>"
+      const isSeeker = form.role === 'seeker';
       const nameBase = form.title.trim() || `${pType.label}${form.area ? ` — ${form.area}` : ''}`;
-      const name = nameBase.slice(0, 160);
+      const name = (isSeeker ? `🔍 طلب سكن: ${nameBase}` : nameBase).slice(0, 160);
 
       // Tags: filterable chips
-      const tagParts = [pType.label];
+      const tagParts = [isSeeker ? 'طلب بحث' : pType.label];
+      if (isSeeker) tagParts.push(pType.label);
       if (isBed && form.beds_available) tagParts.push(`${form.beds_available} سرير متاح`);
       if (isRoom && form.rooms_total) tagParts.push(`${form.rooms_total} غرف`);
       form.audience.forEach((a) => {
@@ -158,7 +163,9 @@ export default function RentalSubmit() {
 
       await api.post('/services/submit', payload);
       setSent(true);
-      toast.success('تم إرسال العرض — الإدارة ستراجعه قبل النشر');
+      toast.success(isSeeker
+        ? 'تم إرسال طلبك — الإدارة ستراجعه قبل النشر'
+        : 'تم إرسال العرض — الإدارة ستراجعه قبل النشر');
     } catch (err) {
       toast.error(err.response?.data?.error || err.message || 'تعذّر الإرسال');
     } finally {
@@ -205,6 +212,14 @@ export default function RentalSubmit() {
       </section>
 
       <section className="container-p py-8 md:py-10">
+        <div className="max-w-3xl mx-auto mb-6">
+          <ApprovedMarquee
+            categorySlug="student-housing"
+            title="عروض السكن المنشورة"
+            subtitle="شقق وغرف وأسرّة معتمدة من الإدارة — اضغط على أي عرض للتفاصيل"
+            accent="sky"
+          />
+        </div>
         <form onSubmit={onSubmit} className="max-w-3xl mx-auto space-y-5">
           {/* Disclaimer — important */}
           <div className="flex items-start gap-2 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl p-4 text-sm leading-7">
@@ -221,22 +236,38 @@ export default function RentalSubmit() {
 
           {/* Role */}
           <Card title="أنت">
-            <div className="flex gap-2">
-              {[{ id: 'owner', label: 'مالك السكن' }, { id: 'agent', label: 'سمسار / وسيط' }].map((r) => (
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'owner',   label: 'مالك السكن',         desc: 'أعرض شقتي' },
+                { id: 'agent',   label: 'سمسار / وسيط',       desc: 'أعرض شقة عميل' },
+                { id: 'seeker',  label: 'طالب / موظف',         desc: 'أبحث عن سكن' },
+              ].map((r) => (
                 <button type="button" key={r.id} onClick={() => update('role', r.id)}
-                  className={`flex-1 rounded-xl border p-3 text-sm font-bold transition ${
+                  className={`rounded-xl border p-3 text-sm font-bold transition text-center ${
                     form.role === r.id
                       ? 'bg-sky-50 border-sky-400 ring-2 ring-sky-100 text-sky-900'
                       : 'bg-white border-slate-200 hover:border-slate-300'
-                  }`}>{r.label}</button>
+                  }`}>
+                  <div>{r.label}</div>
+                  <div className="text-[11px] font-normal text-slate-500 mt-0.5">{r.desc}</div>
+                </button>
               ))}
             </div>
+            {form.role === 'seeker' && (
+              <div className="mt-3 text-xs bg-sky-50 border border-sky-200 text-sky-900 rounded-lg p-2.5 leading-6">
+                <b>نشر طلب بحث:</b> سيظهر طلبك في قسم السكن. الملاك والسماسرة سيتواصلون معك لو لاقوا ما يناسب طلبك.
+              </div>
+            )}
           </Card>
 
           {/* Owner info */}
           <Card title="بيانات التواصل">
             <div className="grid md:grid-cols-2 gap-3">
-              <Field label={form.role === 'owner' ? 'اسم المالك *' : 'اسم السمسار *'}>
+              <Field label={
+                form.role === 'owner' ? 'اسم المالك *'
+                : form.role === 'agent' ? 'اسم السمسار *'
+                : 'اسمك *'
+              }>
                 <input className="input" value={form.owner_name}
                   onChange={(e) => update('owner_name', e.target.value)} required />
               </Field>
@@ -250,9 +281,12 @@ export default function RentalSubmit() {
                   onChange={(e) => update('whatsapp', e.target.value)}
                   placeholder="01xxxxxxxxx" />
               </Field>
-              <Field label="عنوان مختصر للعرض (اختياري)">
-                <input className="input" placeholder="مثال: شقة طلاب بنات بجوار الجامعة"
-                  value={form.title} onChange={(e) => update('title', e.target.value)} />
+              <Field label={form.role === 'seeker' ? 'عنوان طلبك (اختياري)' : 'عنوان مختصر للعرض (اختياري)'}>
+                <input className="input" placeholder={
+                  form.role === 'seeker'
+                    ? 'مثال: طالب أبحث عن سرير بجوار الجامعة'
+                    : 'مثال: شقة طلاب بنات بجوار الجامعة'
+                } value={form.title} onChange={(e) => update('title', e.target.value)} />
               </Field>
             </div>
           </Card>
@@ -383,7 +417,9 @@ export default function RentalSubmit() {
           {/* Location */}
           <Card title="الموقع" icon={MapPin}>
             <div className="mb-3">
-              <div className="text-xs text-slate-600 mb-2">المنطقة:</div>
+              <div className="text-xs text-slate-600 mb-2">
+                أمثلة لمناطق قريبة من الجامعة (اضغط لتُملأ تلقائياً، أو اكتب أي منطقة في خانة العنوان):
+              </div>
               <div className="flex flex-wrap gap-1.5">
                 {QENA_AREAS.map((c) => {
                   const active = form.area === c;
@@ -398,7 +434,8 @@ export default function RentalSubmit() {
               </div>
             </div>
             <Field label="العنوان التفصيلي">
-              <input className="input" placeholder="مثال: شارع الجامعة، عمارة 5، الدور الثالث"
+              <input className="input"
+                placeholder="مثال: الشئون - دردشة المساكن - حوض 10 - شارع الجميل - البنزيون..."
                 value={form.address} onChange={(e) => update('address', e.target.value)} />
             </Field>
             <div className="mt-3">

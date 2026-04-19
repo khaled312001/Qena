@@ -4,7 +4,12 @@ import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import App from './App.jsx';
 import ScrollToTop from './components/ScrollToTop.jsx';
+import { enableContentProtection } from './lib/protect.js';
 import './styles/index.css';
+
+// Content protection: right-click, copy, DevTools detection.
+// Phones and addresses remain copyable via `.copyable` class on those elements.
+enableContentProtection();
 
 // Browsers try to restore scroll across navigations; we handle it ourselves
 // via <ScrollToTop /> so route changes always start at the top.

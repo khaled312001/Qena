@@ -24,7 +24,7 @@ export default function EmergencyStrip() {
       <Phone className="w-3.5 h-3.5" />
       <b>{n.name}</b>
       <span className="opacity-70">·</span>
-      <span dir="ltr" className="font-bold">{n.phone}</span>
+      <span dir="ltr" className="font-bold copyable">{n.phone}</span>
     </a>
   );
 

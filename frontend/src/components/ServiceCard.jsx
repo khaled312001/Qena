@@ -62,7 +62,7 @@ export default function ServiceCard({ s }) {
         )}
         <div className="flex flex-wrap gap-1.5">
           {(s.address || s.city) && (
-            <span className="chip"><MapPin className="w-3 h-3" /> {s.city || s.address}</span>
+            <span className="chip copyable"><MapPin className="w-3 h-3" /> {s.city || s.address}</span>
           )}
           {s.working_hours && (
             <span className="chip"><Clock className="w-3 h-3" /> {s.working_hours}</span>
@@ -78,7 +78,7 @@ export default function ServiceCard({ s }) {
               aria-label={`اتصال بـ ${s.name}`}
             >
               <Phone className="w-4 h-4" />
-              <span>اتصال — {s.phone}</span>
+              <span className="copyable">اتصال — {s.phone}</span>
             </a>
           ) : (
             <div className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-500 text-sm py-2.5 rounded-xl">

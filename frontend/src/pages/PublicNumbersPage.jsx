@@ -60,7 +60,7 @@ export default function PublicNumbersPage() {
                     <div className="font-bold text-slate-900 truncate">{n.name}</div>
                     {n.description && <div className="text-xs text-slate-500 truncate">{n.description}</div>}
                   </div>
-                  <div dir="ltr" className={`font-mono text-sm font-bold ${n.is_emergency ? 'text-red-700' : 'text-slate-700'}`}>{n.phone}</div>
+                  <div dir="ltr" className={`font-mono text-sm font-bold copyable ${n.is_emergency ? 'text-red-700' : 'text-slate-700'}`}>{n.phone}</div>
                 </a>
               ))}
             </div>

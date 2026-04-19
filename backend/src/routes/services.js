@@ -223,7 +223,18 @@ router.delete('/:id', requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// Admin upload — authenticated
 router.post('/upload', requireAuth, upload.single('image'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'لا يوجد ملف' });
+  const url = `/api/uploads/${req.file.filename}`;
+  res.json({ url });
+});
+
+// Public upload — used by the SubmitService form. Multer itself enforces
+// 5MB and image/* MIME types. The outer /services/submit rate limiter
+// (mounted in index.js) also protects this route from flood attempts.
+// We still keep this here as it's a child of /services.
+router.post('/submit/upload', upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'لا يوجد ملف' });
   const url = `/api/uploads/${req.file.filename}`;
   res.json({ url });

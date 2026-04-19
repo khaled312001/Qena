@@ -127,7 +127,7 @@ export default function ServiceDetail() {
             <h3 className="font-bold mb-3">اتصل الآن</h3>
             {s.phone ? (
               <a href={`tel:${s.phone}`} className="btn-primary w-full justify-center">
-                <Phone className="w-4 h-4" /> {s.phone}
+                <Phone className="w-4 h-4" /> <span className="copyable">{s.phone}</span>
               </a>
             ) : (
               <div className="text-sm text-slate-500">لا يوجد رقم متاح</div>
@@ -180,9 +180,9 @@ function Row({ icon: Ic, label, value, href }) {
       <div className="flex-1 min-w-0">
         {href ? (
           <a href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noreferrer"
-             className="text-brand-700 hover:text-brand-800 font-medium break-words text-sm sm:text-base">{value}</a>
+             className="text-brand-700 hover:text-brand-800 font-medium break-words text-sm sm:text-base copyable">{value}</a>
         ) : (
-          <span className="text-slate-800 break-words text-sm sm:text-base">{value}</span>
+          <span className="text-slate-800 break-words text-sm sm:text-base copyable">{value}</span>
         )}
       </div>
     </div>

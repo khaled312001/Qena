@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Plus, Edit, Trash2, Check, X, Star, Search, MapPin } from 'lucide-react';
 import api from '../../lib/api.js';
+import ImageUploader from '../../components/ImageUploader.jsx';
 
 const STATUSES = [
   { v: 'all', l: 'الكل' },
@@ -152,6 +153,7 @@ function ServiceEditor({ value, cats, onClose, onSave }) {
     working_hours: value.working_hours || '', price_range: value.price_range || '',
     website: value.website || '', tags: value.tags || '',
     lat: value.lat || '', lng: value.lng || '',
+    image_url: value.image_url || '',
     is_featured: !!value.is_featured, status: value.status || 'approved',
   });
   const update = (k, v) => setF({ ...f, [k]: v });
@@ -171,6 +173,15 @@ function ServiceEditor({ value, cats, onClose, onSave }) {
                 {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </L>
+          </div>
+          <div>
+            <div className="block text-sm mb-1 text-slate-700">صورة الخدمة</div>
+            <ImageUploader
+              value={f.image_url}
+              onChange={(url) => update('image_url', url || '')}
+              endpoint="/services/upload"
+              label="اختر صورة"
+            />
           </div>
           <L label="الوصف"><textarea className="input min-h-[80px]" value={f.description} onChange={(e) => update('description', e.target.value)} /></L>
           <div className="grid md:grid-cols-2 gap-3">

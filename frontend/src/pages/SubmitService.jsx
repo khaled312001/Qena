@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { CheckCircle2, Info } from 'lucide-react';
 import api from '../lib/api.js';
 import LocationPicker from '../components/LocationPicker.jsx';
+import ImageUploader from '../components/ImageUploader.jsx';
 
 export default function SubmitService() {
   const [searchParams] = useSearchParams();
@@ -25,6 +26,7 @@ export default function SubmitService() {
     working_hours: '',
     price_range: '',
     website: '',
+    image_url: '',
     lat: null,
     lng: null,
     submitted_by_name: '',
@@ -130,6 +132,21 @@ export default function SubmitService() {
                 موقع المكان على الخريطة <span className="text-slate-400 text-xs font-normal">(اختياري لكن مفيد جداً)</span>
               </label>
               <LocationPicker value={pin} onChange={setPin} height={260} />
+            </div>
+          )}
+
+          {/* Image uploader — public endpoint, rate-limited, validated 5MB + image/* */}
+          {form.type !== 'correction' && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                صورة للمكان <span className="text-slate-400 text-xs font-normal">(اختياري — تظهر في بطاقة الخدمة بعد المراجعة)</span>
+              </label>
+              <ImageUploader
+                value={form.image_url}
+                onChange={(url) => update('image_url', url || '')}
+                endpoint="/services/submit/upload"
+                label="اختر صورة للمكان"
+              />
             </div>
           )}
 

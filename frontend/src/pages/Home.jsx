@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Phone, Plus, ChevronLeft, Scroll, Sparkles, MapPin, Heart, CheckCircle2, ShieldCheck, Navigation } from 'lucide-react';
+import { Phone, Plus, ChevronLeft, Scroll, Sparkles, MapPin, Heart, CheckCircle2, ShieldCheck, Navigation, Car, BedDouble } from 'lucide-react';
 import api from '../lib/api.js';
 import { Icon } from '../lib/icons.jsx';
 import ServiceCard from '../components/ServiceCard.jsx';
@@ -121,7 +121,10 @@ export default function Home() {
                   <Plus className="w-4 h-4" /> أضف خدمتك
                 </Link>
                 <Link to="/submit/driver" className="btn bg-white/10 text-white hover:bg-white/20 backdrop-blur border border-white/15">
-                  <Plus className="w-4 h-4" /> سجّل كسائق
+                  <Car className="w-4 h-4" /> سجّل كسائق
+                </Link>
+                <Link to="/submit/rental" className="btn bg-sky-500 text-white hover:bg-sky-400 font-bold shadow-lg shadow-sky-500/25">
+                  <BedDouble className="w-4 h-4" /> اعرض سكن
                 </Link>
               </div>
 

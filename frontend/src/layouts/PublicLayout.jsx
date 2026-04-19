@@ -48,7 +48,7 @@ export default function PublicLayout() {
                    className="font-extrabold text-amber-300 hover:text-amber-200 transition">شركة برمجلي</a>
                 <span className="opacity-70">|</span>
                 <a href="tel:01010254819" dir="ltr" className="inline-flex items-center gap-1 hover:text-amber-300 transition">
-                  <Phone className="w-3 h-3" /> 01010254819
+                  <Phone className="w-3 h-3" /> <span className="copyable">01010254819</span>
                 </a>
                 <span className="opacity-60 mx-2">✦</span>
                 <a href="https://barmagly.tech/" target="_blank" rel="noreferrer"
@@ -137,7 +137,7 @@ export default function PublicLayout() {
                   <div className="grid gap-2">
                     <a href="tel:01010254819" dir="ltr"
                        className="btn bg-amber-500 text-slate-900 hover:bg-amber-400 w-full justify-center font-bold text-sm">
-                      <Phone className="w-4 h-4" /> 01010254819
+                      <Phone className="w-4 h-4" /> <span className="copyable">01010254819</span>
                     </a>
                     <a href="tel:+201060049287" dir="ltr"
                        className="btn bg-emerald-600 text-white hover:bg-emerald-500 w-full justify-center text-sm">

@@ -29,6 +29,75 @@ body {
   overscroll-behavior-y: contain;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  position: relative;
+}
+
+/* ===== WATERMARK =====================================================
+   Fixed, low-opacity Barmagly logo behind every page. pointer-events:none
+   ensures it never captures clicks; z-index:0 keeps it under the content
+   (#root is z:1). Opacity is tuned low enough to never hurt readability. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url('/barmagly-logo.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: min(55vmin, 480px);
+  opacity: 0.055;
+}
+#root { position: relative; z-index: 1; }
+
+/* ===== COPY PROTECTION ==============================================
+   Block text selection + drag + long-press menu by default across the whole
+   site. Phone numbers and addresses are opted back in via .copyable helper
+   (applied on the phone/address elements). This is UX-level deterrence —
+   sophisticated users can always bypass via DevTools. */
+html, body {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;            /* iOS long-press menu */
+  -webkit-user-drag: none;
+}
+img { -webkit-user-drag: none; user-select: none; pointer-events: auto; }
+input, textarea, select, [contenteditable="true"] {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+/* Opt-in selectable content: phone numbers and addresses */
+.copyable, .copyable * {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+  cursor: text;
+}
+
+/* Screen-capture deterrent: show a non-selectable "محتوى محمي" watermark
+   when printing (which Print-to-PDF + some screenshot tools use). */
+@media print {
+  body::before {
+    opacity: 0.12;
+    background-size: min(60vmin, 680px);
+  }
+  body::after {
+    content: 'قناوي · محتوى محمي — qinawy.com';
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(12, 74, 110, 0.18);
+    font-weight: 900;
+    font-size: 8vw;
+    transform: rotate(-25deg);
+    z-index: 9999;
+    pointer-events: none;
+  }
 }
 
 /* Removes 300ms tap delay and blue flash */

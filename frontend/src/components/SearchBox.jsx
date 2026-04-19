@@ -105,8 +105,8 @@ export default function SearchBox({ autoFocus = false, variant = 'light' }) {
                   <div className="font-bold text-slate-900 truncate text-sm">{s.name}</div>
                   <div className="text-xs text-slate-500 flex items-center gap-3 mt-0.5 truncate">
                     {cat.name && <span>{cat.name}</span>}
-                    {s.address && <span className="inline-flex items-center gap-0.5 truncate"><MapPin className="w-3 h-3" />{s.address.slice(0, 30)}</span>}
-                    {s.phone && <span className="inline-flex items-center gap-0.5" dir="ltr"><Phone className="w-3 h-3" />{s.phone}</span>}
+                    {s.address && <span className="inline-flex items-center gap-0.5 truncate copyable"><MapPin className="w-3 h-3" />{s.address.slice(0, 30)}</span>}
+                    {s.phone && <span className="inline-flex items-center gap-0.5 copyable" dir="ltr"><Phone className="w-3 h-3" />{s.phone}</span>}
                   </div>
                 </div>
               </button>

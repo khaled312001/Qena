@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import api from '../lib/api.js';
 import LocationPicker from '../components/LocationPicker.jsx';
+import ApprovedMarquee from '../components/ApprovedMarquee.jsx';
 
 const VEHICLE_TYPES = [
   { id: 'microbus',   label: 'ميكروباص',      icon: Bus,   desc: 'رحلات داخلية وبين المحافظات' },
@@ -171,6 +172,14 @@ export default function DriverSubmit() {
       </section>
 
       <section className="container-p py-8 md:py-10">
+        <div className="max-w-3xl mx-auto mb-6">
+          <ApprovedMarquee
+            categorySlug="private-transport"
+            title="السائقون المعتمدون"
+            subtitle="ميكروباص، ملاكي، نقل، موتوسيكل — معتمدون من الإدارة، اضغط للتواصل"
+            accent="emerald"
+          />
+        </div>
         <form onSubmit={onSubmit} className="max-w-3xl mx-auto space-y-5">
           {/* Notice */}
           <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl p-3 text-sm leading-7">
