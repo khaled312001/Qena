@@ -1,5 +1,6 @@
 'use strict';
-// Passenger entry for qena.barmagly.tech
+// Passenger entry for the Qinawy backend (serves /api on https://qinawy.com)
+// Passenger app still lives under barmagly.tech/qena-nodejs for stability.
 // Deployed to: /home/u492425110/domains/barmagly.tech/qena-nodejs/server.js
 // Source app: /home/u492425110/qena-app/
 

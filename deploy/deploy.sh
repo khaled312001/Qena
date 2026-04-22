@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Deploy Qena Guide on Hostinger
+# Deploy Qinawy on Hostinger — serves from https://qinawy.com directly
 # Run this script ON THE SERVER from /home/u492425110/qena-app
 
 set -e
 APP_ROOT="/home/u492425110/qena-app"
-DOMAIN_ROOT="/home/u492425110/domains/barmagly.tech"
-PUBLIC_DIR="${DOMAIN_ROOT}/public_html/qena"
-PASS_DIR="${DOMAIN_ROOT}/qena-nodejs"
+PUBLIC_DIR="/home/u492425110/domains/qinawy.com/public_html"
+PASS_DIR="/home/u492425110/domains/barmagly.tech/qena-nodejs"
 NODE="/opt/alt/alt-nodejs22/root/bin/node"
 NPM="/opt/alt/alt-nodejs22/root/bin/npm"
 
@@ -23,11 +22,11 @@ cd "$APP_ROOT/frontend"
 "$NPM" install
 "$NPM" run build
 
-echo "› syncing frontend dist to public_html/qena..."
+echo "› syncing frontend dist to qinawy.com/public_html..."
 mkdir -p "$PUBLIC_DIR"
-# keep existing api/ folder
+# keep existing api/ folder and .htaccess (we overwrite .htaccess explicitly below)
 rsync -a --delete --exclude='api' --exclude='.htaccess' "$APP_ROOT/frontend/dist/" "$PUBLIC_DIR/"
-cp "$APP_ROOT/deploy/public_html.htaccess" "$PUBLIC_DIR/.htaccess"
+cp "$APP_ROOT/deploy/qinawy_public_html.htaccess" "$PUBLIC_DIR/.htaccess"
 
 echo "› setting up /api passenger folder..."
 mkdir -p "$PUBLIC_DIR/api"
@@ -41,4 +40,4 @@ ln -sfn "$APP_ROOT/backend/node_modules" "$PASS_DIR/node_modules"
 echo "› restarting passenger..."
 touch "$PASS_DIR/tmp/restart.txt"
 
-echo "✓ Deployed. Visit https://qena.barmagly.tech"
+echo "✓ Deployed. Visit https://qinawy.com"
