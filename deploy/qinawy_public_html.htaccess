@@ -22,12 +22,9 @@ RewriteRule ^sitemap\.xml$ /api/sitemap.xml [L]
 # Let /api be handled by Passenger (see api/.htaccess)
 RewriteRule ^api($|/) - [L]
 
-# Homepage — explicit rewrite so DirectoryIndex doesn't short-circuit to index.html
-RewriteRule ^$ /api/render?path=/ [QSA,L]
-
-# Real files (assets, ads.txt, robots.txt, favicons, etc.) — serve as-is
+# Static files (assets, ads.txt, robots.txt, favicons) — serve as-is
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
-# All other paths — proxy to Node SSR for per-route <title>/description/canonical
-RewriteRule ^(.*)$ /api/render?path=/$1 [QSA,L]
+# Everything else — fall through to the Hostinger-bound qinawy.com Node app,
+# which mounts an SPA catch-all that returns per-route SSR'd HTML.

@@ -54,6 +54,12 @@ app.use('/', seoRouter);
 
 app.use(`${BASE}`, writeLimiter);
 
+// SPA catch-all: any GET that didn't match an API route gets a per-route
+// SSR'd index.html (correct <title>/description/canonical/og tags). This
+// runs after the API routes so it only catches /, /about, /category/*,
+// /service/*, etc. — not /api/*.
+app.use(seoRouter.spaCatchAll);
+
 app.use((err, _req, res, _next) => {
   console.error('[error]', err);
   res.status(err.status || 500).json({ error: err.message || 'خطأ في الخادم' });

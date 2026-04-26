@@ -191,9 +191,7 @@ async function metaFor(reqPath) {
   return { title: HOMEPAGE_TITLE, description: HOMEPAGE_DESC };
 }
 
-router.get('/render', async (req, res) => {
-  const reqPath = typeof req.query.path === 'string' && req.query.path.startsWith('/')
-    ? req.query.path : '/';
+async function renderForPath(reqPath, res) {
   try {
     const meta = await metaFor(reqPath);
     const canonical = BASE + (reqPath === '/' ? '/' : reqPath.replace(/\/+$/, ''));
@@ -202,7 +200,7 @@ router.get('/render', async (req, res) => {
     const descEsc = esc(meta.description);
     const canonEsc = esc(canonical);
 
-    let html = getIndexHtml()
+    const html = getIndexHtml()
       .replace(/<title>[^<]*<\/title>/, `<title>${titleEsc}</title>`)
       .replace(/(<meta\s+name="description"\s+content=")[^"]*(")/, `$1${descEsc}$2`)
       .replace(/(<link\s+rel="canonical"\s+href=")[^"]*(")/, `$1${canonEsc}$2`)
@@ -224,6 +222,24 @@ router.get('/render', async (req, res) => {
       res.status(500).send('Render error');
     }
   }
+}
+
+// /render endpoint (used when called explicitly, e.g. via Apache rewrite)
+router.get('/render', async (req, res) => {
+  const reqPath = typeof req.query.path === 'string' && req.query.path.startsWith('/')
+    ? req.query.path : '/';
+  return renderForPath(reqPath, res);
 });
 
+// SPA catch-all middleware: render the SPA HTML for any GET that no other
+// route matched. Mount via app.use(spaCatchAll) AFTER all API routes.
+async function spaCatchAll(req, res, next) {
+  if (req.method !== 'GET') return next();
+  // Skip API and admin paths (admin is a SPA route but blocked from indexing,
+  // so we still serve it the homepage HTML — same as before).
+  if (req.path.startsWith('/api/')) return next();
+  return renderForPath(req.path, res);
+}
+
 module.exports = router;
+module.exports.spaCatchAll = spaCatchAll;
