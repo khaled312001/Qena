@@ -45,6 +45,13 @@ app.use(`${BASE}/suggestions`, suggestionsRouter);
 
 app.use(`${BASE}/stats`, require('./routes/stats'));
 
+// SEO endpoints — mount at BOTH /api/* and /* because Passenger's
+// `PassengerBaseURI /api` strips the prefix before handing off to Express,
+// so root-URL rewrites arrive here without the /api part.
+const seoRouter = require('./routes/seo');
+app.use(`${BASE}`, seoRouter);
+app.use('/', seoRouter);
+
 app.use(`${BASE}`, writeLimiter);
 
 app.use((err, _req, res, _next) => {
