@@ -45,9 +45,10 @@ ln -sfn "$APP_ROOT/backend/node_modules" "$PASS_DIR/node_modules"
 # dotenv can't find it and DB connections fail.
 QINAWY_APP="/home/u492425110/domains/qinawy.com/nodejs"
 echo "› syncing backend source into qinawy.com/nodejs..."
-mkdir -p "$QINAWY_APP/tmp"
-rsync -a --delete --exclude='node_modules' --exclude='.env' --exclude='uploads' \
+rsync -a --delete \
+  --exclude='node_modules' --exclude='.env' --exclude='uploads' --exclude='tmp' \
   "$APP_ROOT/backend/" "$QINAWY_APP/"
+mkdir -p "$QINAWY_APP/tmp"
 cp "$APP_ROOT/backend/.env" "$QINAWY_APP/.env"
 ln -sfn "$APP_ROOT/backend/node_modules" "$QINAWY_APP/node_modules"
 ln -sfn "$APP_ROOT/backend/uploads" "$QINAWY_APP/uploads"
