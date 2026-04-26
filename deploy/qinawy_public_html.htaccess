@@ -19,12 +19,22 @@ RewriteRule ^\.builds - [F,L]
 # SEO: dynamic sitemap.xml at the domain root, backed by the Node backend.
 RewriteRule ^sitemap\.xml$ /api/sitemap.xml [L]
 
-# Let /api be handled by Passenger (see api/.htaccess)
+# /api/* uses public_html/api/.htaccess (Passenger pointing at qena-nodejs).
+# Pass through here so it doesn't get rewritten.
 RewriteRule ^api($|/) - [L]
 
-# Static files (assets, ads.txt, robots.txt, favicons) — serve as-is
+# Static files (assets, ads.txt, robots.txt, favicons) — serve as-is.
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
-# Everything else — fall through to the Hostinger-bound qinawy.com Node app,
-# which mounts an SPA catch-all that returns per-route SSR'd HTML.
+# Everything else falls through to the Passenger app below, which is our
+# backend (synced into qinawy.com/nodejs/ by deploy.sh). Express has an
+# SPA catch-all that returns per-route SSR'd index.html for /, /about,
+# /category/*, /service/*, etc.
+PassengerAppRoot /home/u492425110/domains/qinawy.com/nodejs
+PassengerAppType node
+PassengerNodejs /opt/alt/alt-nodejs22/root/bin/node
+PassengerStartupFile src/index.js
+PassengerBaseURI /
+PassengerRestartDir /home/u492425110/domains/qinawy.com/nodejs/tmp
+SetEnv NODE_ENV=production
