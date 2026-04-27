@@ -124,6 +124,10 @@ const STATIC_META = {
     title: 'أرقام قنا المهمة | طوارئ، نجدة، إسعاف، مطافئ، شكاوى — قناوي',
     description: 'أرقام الطوارئ والخدمات في محافظة قنا: النجدة 122، الإسعاف 123، المطافئ 180، الكهرباء، الغاز، المياه، شكاوى الحكومة.',
   },
+  '/nearby': {
+    title: 'قريب مني | خدمات بالقرب منك في قنا — قناوي',
+    description: 'اعرف أقرب مستشفى، صيدلية، عيادة، أو محطة وقود لموقعك الحالي في محافظة قنا. خدمة مجانية من قناوي.',
+  },
   '/submit': {
     title: 'أضف خدمتك إلى دليل قنا — قناوي',
     description: 'سجل مستشفى، صيدلية، عيادة، فندق، مطعم، أو أي خدمة في محافظة قنا مجاناً ضمن دليل قناوي. مراجعة قبل النشر.',
@@ -162,19 +166,30 @@ function metaForService(svc) {
   };
 }
 
+// Resolve route metadata. Returns { meta, found }. `found: false` means
+// the path doesn't match any known SPA route (or the DB row was missing)
+// and the caller should respond 404 + noindex so search engines drop the
+// URL instead of indexing the SPA shell as a phantom canonical.
 async function metaFor(reqPath) {
   let p = (reqPath || '/').split('?')[0];
   if (p.length > 1) p = p.replace(/\/+$/, '');
   if (!p) p = '/';
 
-  if (STATIC_META[p]) return STATIC_META[p];
+  if (STATIC_META[p]) return { meta: STATIC_META[p], found: true };
+
+  // /admin and subpaths — known SPA routes, but excluded from indexing.
+  // Serve the SPA shell with default meta and a noindex tag.
+  if (p === '/admin' || p.startsWith('/admin/')) {
+    return { meta: STATIC_META['/'], found: true, noindex: true };
+  }
 
   let m = p.match(/^\/category\/([a-z0-9-]+)$/i);
   if (m) {
     try {
       const cat = await Category.findOne({ where: { slug: m[1], is_active: true } });
-      if (cat) return metaForCategory(cat);
+      if (cat) return { meta: metaForCategory(cat), found: true };
     } catch (_) { /* fall through */ }
+    return { meta: STATIC_META['/'], found: false };
   }
 
   m = p.match(/^\/service\/(\d+)$/);
@@ -184,23 +199,26 @@ async function metaFor(reqPath) {
         where: { id: m[1], status: 'approved' },
         include: [{ model: Category, as: 'category', attributes: ['name', 'slug'] }],
       });
-      if (svc) return metaForService(svc);
+      if (svc) return { meta: metaForService(svc), found: true };
     } catch (_) { /* fall through */ }
+    return { meta: STATIC_META['/'], found: false };
   }
 
-  return { title: HOMEPAGE_TITLE, description: HOMEPAGE_DESC };
+  return { meta: STATIC_META['/'], found: false };
 }
 
 async function renderForPath(reqPath, res) {
   try {
-    const meta = await metaFor(reqPath);
-    const canonical = BASE + (reqPath === '/' ? '/' : reqPath.replace(/\/+$/, ''));
+    const { meta, found, noindex } = await metaFor(reqPath);
+    const canonical = found
+      ? BASE + (reqPath === '/' ? '/' : reqPath.replace(/\/+$/, ''))
+      : BASE + '/';
 
     const titleEsc = esc(meta.title);
     const descEsc = esc(meta.description);
     const canonEsc = esc(canonical);
 
-    const html = getIndexHtml()
+    let html = getIndexHtml()
       .replace(/<title>[^<]*<\/title>/, `<title>${titleEsc}</title>`)
       .replace(/(<meta\s+name="description"\s+content=")[^"]*(")/, `$1${descEsc}$2`)
       .replace(/(<link\s+rel="canonical"\s+href=")[^"]*(")/, `$1${canonEsc}$2`)
@@ -210,9 +228,19 @@ async function renderForPath(reqPath, res) {
       .replace(/(<meta\s+name="twitter:title"\s+content=")[^"]*(")/, `$1${titleEsc}$2`)
       .replace(/(<meta\s+name="twitter:description"\s+content=")[^"]*(")/, `$1${descEsc}$2`);
 
+    // For unknown URLs (not a real SPA route or missing DB row) and admin
+    // routes: replace the indexable robots meta with a noindex tag so search
+    // engines drop the URL instead of indexing the SPA shell.
+    if (!found || noindex) {
+      html = html.replace(
+        /<meta\s+name="robots"\s+content="[^"]*"\s*\/>/,
+        '<meta name="robots" content="noindex,nofollow" />'
+      );
+    }
+
     res.set('Content-Type', 'text/html; charset=utf-8');
     res.set('Cache-Control', 'public, max-age=300');
-    res.send(html);
+    res.status(found ? 200 : 404).send(html);
   } catch (e) {
     console.error('[render] error for', reqPath, ':', e && e.message);
     try {

@@ -13,6 +13,11 @@ Options -MultiViews
 
 RewriteEngine On
 
+# Canonicalize host: www.qinawy.com → qinawy.com (apex). The TLS cert covers
+# both, so a 301 here keeps Google from treating www as a duplicate.
+RewriteCond %{HTTP_HOST} ^www\.qinawy\.com$ [NC]
+RewriteRule ^(.*)$ https://qinawy.com/$1 [R=301,L]
+
 # Hostinger's internal build folder — never expose it
 RewriteRule ^\.builds - [F,L]
 
