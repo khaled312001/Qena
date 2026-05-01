@@ -34,35 +34,37 @@ function esc(s) {
 }
 
 router.get('/sitemap.xml', async (_req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+  const urls = [];
+  for (const p of STATIC_PAGES) {
+    urls.push(`<url><loc>${BASE}${p.loc}</loc><lastmod>${today}</lastmod><changefreq>${p.changefreq}</changefreq><priority>${p.priority}</priority></url>`);
+  }
+
+  // Add DB-backed entries best-effort — fall back to the 8 static pages if
+  // the DB is unreachable so Google Search Console stops getting 503s.
   try {
     const cats = await Category.findAll({ where: { is_active: true }, attributes: ['slug', 'updatedAt'] });
+    for (const c of cats) {
+      const lm = (c.updatedAt || new Date()).toISOString().split('T')[0];
+      urls.push(`<url><loc>${BASE}/category/${esc(c.slug)}</loc><lastmod>${lm}</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>`);
+    }
     const services = await Service.findAll({
       where: { status: 'approved' },
       attributes: ['id', 'updatedAt'],
       order: [['id', 'ASC']],
     });
-
-    const today = new Date().toISOString().split('T')[0];
-    const urls = [];
-    for (const p of STATIC_PAGES) {
-      urls.push(`<url><loc>${BASE}${p.loc}</loc><lastmod>${today}</lastmod><changefreq>${p.changefreq}</changefreq><priority>${p.priority}</priority></url>`);
-    }
-    for (const c of cats) {
-      const lm = (c.updatedAt || new Date()).toISOString().split('T')[0];
-      urls.push(`<url><loc>${BASE}/category/${esc(c.slug)}</loc><lastmod>${lm}</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>`);
-    }
     for (const s of services) {
       const lm = (s.updatedAt || new Date()).toISOString().split('T')[0];
       urls.push(`<url><loc>${BASE}/service/${s.id}</loc><lastmod>${lm}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>`);
     }
-
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>`;
-    res.set('Content-Type', 'application/xml; charset=utf-8');
-    res.set('Cache-Control', 'public, max-age=3600');
-    res.send(xml);
   } catch (e) {
-    res.status(500).send(`<!-- sitemap error: ${e.message} -->`);
+    console.error('[sitemap] db error, returning static pages only:', e && e.message);
   }
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>`;
+  res.set('Content-Type', 'application/xml; charset=utf-8');
+  res.set('Cache-Control', 'public, max-age=3600');
+  res.send(xml);
 });
 
 router.get('/robots.txt', (_req, res) => {
@@ -188,8 +190,12 @@ async function metaFor(reqPath) {
     try {
       const cat = await Category.findOne({ where: { slug: m[1], is_active: true } });
       if (cat) return { meta: metaForCategory(cat), found: true };
-    } catch (_) { /* fall through */ }
-    return { meta: STATIC_META['/'], found: false };
+      return { meta: STATIC_META['/'], found: false };
+    } catch (_) {
+      // DB unreachable — keep the page indexable rather than 404'ing every
+      // category whenever the connection blips. Generic category meta + 200.
+      return { meta: STATIC_META['/category/all'], found: true };
+    }
   }
 
   m = p.match(/^\/service\/(\d+)$/);
@@ -200,8 +206,11 @@ async function metaFor(reqPath) {
         include: [{ model: Category, as: 'category', attributes: ['name', 'slug'] }],
       });
       if (svc) return { meta: metaForService(svc), found: true };
-    } catch (_) { /* fall through */ }
-    return { meta: STATIC_META['/'], found: false };
+      return { meta: STATIC_META['/'], found: false };
+    } catch (_) {
+      // DB unreachable — see comment above.
+      return { meta: STATIC_META['/'], found: true };
+    }
   }
 
   return { meta: STATIC_META['/'], found: false };

@@ -67,19 +67,33 @@ app.use((err, _req, res, _next) => {
 
 const PORT = Number(process.env.PORT || 5010);
 
-async function start() {
-  try {
-    await sequelize.authenticate();
-    console.log('[db] connected');
-    await sequelize.sync();
-    console.log('[db] synced');
-    app.listen(PORT, () => console.log(`[api] listening on :${PORT}${BASE}`));
-  } catch (e) {
-    console.error('[startup] failed:', e);
-    process.exit(1);
-  }
-}
+// Start the HTTP listener immediately (Passenger ignores .listen but standalone
+// runs need it) and keep retrying the DB connection in the background. Never
+// process.exit on DB failure — Passenger's respawn loop turns that into 503s
+// for everyone, including routes that don't need the DB (sitemap, /render,
+// /api/health). Graceful degradation: routes that need the DB throw at
+// request time and are caught by the route handlers' own try/catch.
+app.listen(PORT, () => console.log(`[api] listening on :${PORT}${BASE}`));
 
-start();
+(async function connectWithRetry() {
+  let attempt = 0;
+  while (true) {
+    try {
+      await sequelize.authenticate();
+      console.log('[db] connected');
+      await sequelize.sync();
+      console.log('[db] synced');
+      return;
+    } catch (e) {
+      attempt++;
+      console.error(`[db] connect attempt ${attempt} failed:`, e && e.message);
+      // Backoff capped at 60s. Don't exit — once the DB credentials are fixed
+      // (or the server comes back), the next attempt will succeed and the
+      // app starts answering DB-backed routes without a manual restart.
+      const delay = Math.min(60000, 5000 * Math.pow(2, Math.min(attempt - 1, 4)));
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+})();
 
 module.exports = app;
