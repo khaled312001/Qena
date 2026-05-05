@@ -13,6 +13,9 @@ Options -MultiViews
 
 RewriteEngine On
 
+# SEO: dynamic sitemap backed by Node backend
+RewriteRule ^sitemap\.xml$ /api/sitemap.xml [L]
+
 # Let /api be handled by Passenger (see api/.htaccess)
 RewriteRule ^api($|/) - [L]
 
