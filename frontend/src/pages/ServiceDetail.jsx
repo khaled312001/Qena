@@ -7,6 +7,7 @@ import api from '../lib/api.js';
 import { Icon } from '../lib/icons.jsx';
 import AdSlot from '../components/AdSlot.jsx';
 import CorrectionModal from '../components/CorrectionModal.jsx';
+import SEO from '../components/SEO.jsx';
 
 // Default marker fix for Leaflet + Vite
 const markerIcon = new L.Icon({
@@ -39,8 +40,75 @@ export default function ServiceDetail() {
   // Only show real images — skip Unsplash category fallbacks / empty URLs.
   const realImage = s.image_url && !s.image_url.toLowerCase().includes('unsplash.com') ? s.image_url : null;
 
+  // Per-service SEO — dynamic title, description, LocalBusiness JSON-LD,
+  // and BreadcrumbList so Google shows rich breadcrumbs in SERPs.
+  const seoTitle = `${s.name} — ${cat.name || 'خدمات قنا'} | قناوي دليل قنا`;
+  const seoDesc = [
+    s.name,
+    cat.name,
+    s.address || (s.city ? `${s.city}، محافظة قنا` : 'محافظة قنا'),
+    s.phone ? `هاتف: ${s.phone}` : '',
+    s.working_hours,
+  ].filter(Boolean).join(' · ').slice(0, 300);
+  const seoKeywords = [
+    s.name, `${s.name} قنا`, cat.name ? `${cat.name} قنا` : '',
+    s.city || '', s.phone || '',
+    'دليل قنا', 'قناوي', 'محافظة قنا',
+  ].filter(Boolean).join(', ');
+
+  const lbType = ({
+    hospitals: 'Hospital', clinics: 'MedicalClinic', pharmacies: 'Pharmacy',
+    hotels: 'Hotel', restaurants: 'Restaurant', cafes: 'CafeOrCoffeeShop',
+    banks: 'BankOrCreditUnion', 'gas-stations': 'GasStation',
+    shops: 'Store', transport: 'LocalBusiness',
+    government: 'GovernmentOffice', education: 'EducationalOrganization',
+    tourism: 'TouristAttraction',
+  })[cat.slug] || 'LocalBusiness';
+
+  const lbLd = {
+    '@context': 'https://schema.org',
+    '@type': lbType,
+    name: s.name,
+    url: `https://qinawy.com/service/${s.id}`,
+    ...(s.phone && { telephone: s.phone }),
+    ...(realImage && { image: realImage.startsWith('http') ? realImage : `https://qinawy.com${realImage}` }),
+    ...(s.description && { description: s.description.slice(0, 300) }),
+    ...((s.address || s.city) && {
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: s.address || '',
+        addressLocality: s.city || 'قنا',
+        addressRegion: 'محافظة قنا',
+        addressCountry: 'EG',
+      },
+    }),
+    ...(s.lat && s.lng && {
+      geo: { '@type': 'GeoCoordinates', latitude: Number(s.lat), longitude: Number(s.lng) },
+    }),
+    ...(s.working_hours && { openingHours: s.working_hours }),
+    ...(s.website && { sameAs: [s.website] }),
+  };
+
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: 'https://qinawy.com/' },
+      cat.slug && { '@type': 'ListItem', position: 2, name: cat.name, item: `https://qinawy.com/category/${cat.slug}` },
+      { '@type': 'ListItem', position: cat.slug ? 3 : 2, name: s.name, item: `https://qinawy.com/service/${s.id}` },
+    ].filter(Boolean),
+  };
+
   return (
     <div>
+      <SEO
+        path={`/service/${s.id}`}
+        title={seoTitle}
+        description={seoDesc}
+        keywords={seoKeywords}
+        image={realImage}
+        jsonLd={[lbLd, breadcrumbLd]}
+      />
       <div className="bg-gradient-to-bl from-brand-50/60 to-white border-b border-slate-100">
         <div className="container-p py-6 sm:py-8">
           <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 mb-3 flex-wrap">

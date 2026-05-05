@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { HelmetProvider } from 'react-helmet-async';
 import App from './App.jsx';
 import ScrollToTop from './components/ScrollToTop.jsx';
 import { enableContentProtection } from './lib/protect.js';
@@ -19,11 +20,13 @@ if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <ScrollToTop />
-      <App />
-      <Toaster position="top-center" toastOptions={{ style: { fontFamily: 'Cairo' } }} />
-    </BrowserRouter>
+    <HelmetProvider>
+      <BrowserRouter>
+        <ScrollToTop />
+        <App />
+        <Toaster position="top-center" toastOptions={{ style: { fontFamily: 'Cairo' } }} />
+      </BrowserRouter>
+    </HelmetProvider>
   </React.StrictMode>
 );
 

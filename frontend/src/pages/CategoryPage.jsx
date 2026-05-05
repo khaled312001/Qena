@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../lib/api.js';
 import ServiceCard from '../components/ServiceCard.jsx';
 import { Icon } from '../lib/icons.jsx';
+import SEO from '../components/SEO.jsx';
 import AdSlot from '../components/AdSlot.jsx';
 
 const SORT_OPTIONS = [
@@ -432,8 +433,35 @@ export default function CategoryPage() {
     </div>
   );
 
+  // SEO: dynamic title + description based on the current category
+  const catName = category?.name || 'كل الخدمات';
+  const seoTitle = `${catName} في قنا — دليل قنا الشامل | قناوي`;
+  const seoDesc = `${catName} في محافظة قنا وكل مراكزها (قفط، قوص، نجع حمادي، دشنا، فرشوط، أبو تشت، نقادة، الوقف). ${services.length ? `${services.length.toLocaleString('ar-EG')} نتيجة` : ''} بأرقام حقيقية وعناوين وإحداثيات خرائط. مجاني من قناوي.`;
+  const seoKeywords = `${catName} قنا, ${catName} محافظة قنا, ${catName} مركز قنا, ${catName} قفط, ${catName} قوص, ${catName} نجع حمادي, قناوي, دليل قنا, Qena ${slug}`;
+
+  // ItemList JSON-LD (helps Google show rich list cards for the category)
+  const itemListLd = services.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `${catName} في قنا`,
+    numberOfItems: services.length,
+    itemListElement: services.slice(0, 20).map((s, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: s.name,
+      url: `https://qinawy.com/service/${s.id}`,
+    })),
+  } : null;
+
   return (
     <div>
+      <SEO
+        path={slug ? `/category/${slug}` : '/category/all'}
+        title={seoTitle}
+        description={seoDesc}
+        keywords={seoKeywords}
+        jsonLd={itemListLd ? [itemListLd] : []}
+      />
       {/* Hero / Breadcrumb */}
       <div className="bg-gradient-to-bl from-slate-50 via-white to-brand-50/30 border-b border-slate-100">
         <div className="container-p py-6 md:py-8">

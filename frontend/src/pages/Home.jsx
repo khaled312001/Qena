@@ -7,6 +7,7 @@ import { Icon } from '../lib/icons.jsx';
 import ServiceCard from '../components/ServiceCard.jsx';
 import EmergencyStrip from '../components/EmergencyStrip.jsx';
 import SearchBox from '../components/SearchBox.jsx';
+import SEO from '../components/SEO.jsx';
 import AdSlot from '../components/AdSlot.jsx';
 
 export default function Home() {
@@ -48,6 +49,12 @@ export default function Home() {
 
   return (
     <div>
+      <SEO
+        path="/"
+        title="قناوي | دليل قنا الشامل — مستشفيات، أطباء، صيدليات، فنادق، مطاعم، خدمات قنا"
+        description="دليل قنا الشامل المجاني. كل مستشفيات قنا وأطباؤها بكل التخصصات، صيدليات 24 ساعة، فنادق، مطاعم، كافيهات، بنوك، مكاتب تموين، محطات وقود، معابد أثرية وأرقام طوارئ. يغطي كل مراكز محافظة قنا: قفط، قوص، نجع حمادي، دشنا، فرشوط، أبو تشت، نقادة، الوقف."
+        keywords="قناوي, Qinawy, دليل قنا, محافظة قنا, مستشفيات قنا, أطباء قنا, صيدليات قنا, فنادق قنا, مطاعم قنا, بنوك قنا, ATM قنا, مصالح حكومية قنا, مكاتب تموين قنا, معبد دندرة, نقادة, قفط, قوص, نجع حمادي, دشنا, فرشوط, أبو تشت, الوقف, جامعة جنوب الوادي, مستشفى قنا العام, مستشفى قنا الجامعي, صيدلية العزبي قنا, البنك الأهلي قنا, أرقام طوارئ قنا, اسعاف قنا, شركة برمجلي, Barmagly"
+      />
       {/* Hero */}
       <section className="relative overflow-hidden isolate">
         {/* Layered backgrounds */}

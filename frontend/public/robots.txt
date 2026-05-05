@@ -1,6 +1,16 @@
 User-agent: *
 Allow: /
 Disallow: /admin
-Disallow: /api
+Disallow: /admin/
+Disallow: /api/
+
+# Specific crawlers
+User-agent: Googlebot
+Allow: /
+Disallow: /admin
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin
 
 Sitemap: https://qinawy.com/sitemap.xml

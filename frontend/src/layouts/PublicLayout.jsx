@@ -2,6 +2,7 @@ import { Outlet, Link, NavLink, useLocation } from 'react-router-dom';
 import { Menu, Phone, Plus, Info, Home, X, MapPin, Scroll, Navigation, Car, BedDouble } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import AdSlot from '../components/AdSlot.jsx';
 
 const links = [
   { to: '/', label: 'الرئيسية', icon: Home },
@@ -27,6 +28,10 @@ const tabBarLinks = [
 export default function PublicLayout() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const routeHasDedicatedAds =
+    location.pathname === '/' ||
+    location.pathname.startsWith('/category/') ||
+    location.pathname.startsWith('/service/');
 
   // Close menu on route change
   useEffect(() => { setOpen(false); }, [location.pathname]);
@@ -158,6 +163,12 @@ export default function PublicLayout() {
       <main className="flex-1 pb-[calc(68px+env(safe-area-inset-bottom))] lg:pb-0">
         <Outlet />
       </main>
+
+      {!routeHasDedicatedAds && (
+        <div className="container-p mt-8">
+          <AdSlot slot={AdSlot.INLINE} format="auto" />
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="bg-gradient-to-b from-slate-900 to-slate-950 text-slate-300 mt-12">

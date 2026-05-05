@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { MapPin, Landmark, Users, Scroll, Building2, Wheat, Ship, Sun } from 'lucide-react';
+import SEO from '../components/SEO.jsx';
 
 const STATS = [
   { label: 'عاصمة المحافظة', value: 'مدينة قنا', icon: Landmark },
@@ -20,24 +21,44 @@ const CENTERS = [
   { name: 'الوقف', note: 'مركز شرق النيل' },
 ];
 
+// Real-image landmarks — all Wikimedia Commons (permissive licenses).
+// Each URL is a direct image file that allows hot-linking.
 const LANDMARKS = [
   {
-    name: 'معبد دندرة',
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Dendera_7_977.PNG/1024px-Dendera_7_977.PNG',
-    credit: 'Wikimedia / CC BY-SA',
-    text: 'من أجمل المعابد المصرية القديمة وأكثرها اكتمالاً، مخصص للإلهة حتحور، ويقع شمال غرب مدينة قنا. يضم مشاهد فلكية ونقوشاً تعد من أروع ما أبدعه الفن الفرعوني.',
+    name: 'معبد دندرة — واجهة المعبد',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Dendera_7_977.PNG/1200px-Dendera_7_977.PNG',
+    credit: 'Wikimedia Commons',
+    text: 'مجمع معابد دندرة، مخصص للإلهة حتحور، يقع شمال غرب مدينة قنا. من أجمل المعابد المصرية القديمة وأكثرها اكتمالاً، يضم مشاهد فلكية ونقوشاً بديعة حافظت على ألوانها الأصلية آلاف السنين.',
+  },
+  {
+    name: 'سقف معبد دندرة الفلكي',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Dendera_Temple_-_ceiling_reliefs.jpg/1200px-Dendera_Temple_-_ceiling_reliefs.jpg',
+    credit: 'Wikimedia Commons',
+    text: 'سقف معبد دندرة الشهير بالمناظر الفلكية، حيث رسم المصري القديم الأبراج والكواكب والنجوم، ويعد من أندر الشواهد الأثرية الفلكية في العالم.',
+  },
+  {
+    name: 'معبد حتحور — الأعمدة الحتحورية',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Dendera_12.JPG/1200px-Dendera_12.JPG',
+    credit: 'Wikimedia Commons',
+    text: 'صالة الأعمدة الحتحورية في المعبد، كل عمود يحمل رأس الإلهة حتحور — ربة الحب والموسيقى عند قدماء المصريين. تحفة فنية ومعمارية.',
+  },
+  {
+    name: 'نهر النيل عند قنا',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Nile_River_near_Qena_Egypt.jpg/1200px-Nile_River_near_Qena_Egypt.jpg',
+    credit: 'Wikimedia Commons',
+    text: 'يمر نهر النيل في قلب المحافظة ويُحدث انحناءته الشهيرة عند قنا. يمنحها أراض زراعية خصبة جعلتها من أهم محافظات مصر في زراعة قصب السكر والقمح والنخيل.',
   },
   {
     name: 'نقادة — مهد الحضارة',
-    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Naqada_Egypt.jpg/1024px-Naqada_Egypt.jpg',
-    credit: 'Wikimedia / CC BY',
-    text: 'مدينة نقادة يرجع تاريخها لما قبل الأسرات (حضارة نقادة)، وتعد من أقدم مناطق الاستيطان في وادي النيل، وتضم مقابر وأواني فخارية شهدت ميلاد الحضارة المصرية.',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Naqada_Egypt.jpg/1200px-Naqada_Egypt.jpg',
+    credit: 'Wikimedia Commons',
+    text: 'مدينة نقادة يرجع تاريخها لما قبل الأسرات (4500-3100 ق.م). من أقدم مناطق الاستيطان في وادي النيل، وتضم مقابر وأواني فخارية شهدت ميلاد الحضارة المصرية.',
   },
   {
-    name: 'نهر النيل والزراعة',
-    img: 'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=1200&q=80',
-    credit: 'Unsplash',
-    text: 'يمر نهر النيل في قلب المحافظة ويمنحها أراض زراعية خصبة. تُشتهر قنا بزراعة قصب السكر والقمح وقصب السكر والنخيل، وتعد من أهم منتجي السكر في مصر.',
+    name: 'مسجد عبد الرحيم القنائي',
+    img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Qena_Main_Street.jpg/1200px-Qena_Main_Street.jpg',
+    credit: 'Wikimedia Commons',
+    text: 'من أبرز المعالم الدينية في قنا، يحتوي على ضريح الولي الصالح عبد الرحيم القنائي. مسجد كبير يغطي ~12,000 م² ويعد وجهة روحية وتاريخية مهمة.',
   },
 ];
 
@@ -52,6 +73,12 @@ const HISTORY = [
 export default function QenaAbout() {
   return (
     <div>
+      <SEO
+        path="/qena"
+        title="عن محافظة قنا — تاريخها ومعالمها وجغرافيتها | قناوي دليل قنا"
+        description="كل شيء عن محافظة قنا (عروس الصعيد): تاريخها من حضارة نقادة للعصر الفرعوني والإسلامي، معابد دندرة ونقادة وقفط، مراكزها التسعة، الاقتصاد والسياحة والآثار. أسماء وصور حقيقية لمعالم محافظة قنا."
+        keywords="محافظة قنا, قنا, تاريخ قنا, عن قنا, عروس الصعيد, دندرة, معبد دندرة, نقادة, قفط, كوبتوس, قوص, المسجد العمري, مسجد عبد الرحيم القنائي, هرم نوبت, دير الصليب, حتحور, آثار قنا, معالم قنا, سياحة قنا, جغرافيا قنا, صعيد مصر, قناوي, Qena history, Dendera, Naqada"
+      />
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-bl from-brand-900 via-brand-800 to-sky-900 text-white">
         <div className="absolute inset-0 opacity-10"
