@@ -13,8 +13,13 @@ Options -MultiViews
 
 RewriteEngine On
 
-# Canonicalize host: www.qinawy.com → qinawy.com (apex). The TLS cert covers
-# both, so a 301 here keeps Google from treating www as a duplicate.
+# Canonicalize host + scheme in a single hop:
+#   http://qinawy.com/x       → https://qinawy.com/x
+#   http://www.qinawy.com/x   → https://qinawy.com/x   (was 2 hops)
+#   https://www.qinawy.com/x  → https://qinawy.com/x
+# The TLS cert covers both hosts. Collapsing chains keeps Google from
+# treating intermediate URLs (www, http) as distinct pages it has to drop.
+RewriteCond %{HTTPS} off [OR]
 RewriteCond %{HTTP_HOST} ^www\.qinawy\.com$ [NC]
 RewriteRule ^(.*)$ https://qinawy.com/$1 [R=301,L]
 

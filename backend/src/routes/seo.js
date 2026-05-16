@@ -2,9 +2,11 @@
 // Mounted at /api/* and / (see backend/src/index.js).
 //
 // /render returns the static index.html with <title>, <meta description>,
-// canonical, and OG/Twitter tags rewritten per-route. Apache routes every
-// SPA path through here so each URL has unique metadata in the initial HTML
-// (for crawlers + correct browser tab title on first paint).
+// canonical, OG/Twitter tags, AND per-route body content (h1 + service info
+// + LocalBusiness/BreadcrumbList/ItemList JSON-LD) injected so Googlebot
+// sees unique HTML for every /service/:id and /category/:slug — otherwise
+// the empty SPA shell makes every URL look like a near-duplicate of the
+// home page and Google clusters them under one canonical.
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
@@ -25,12 +27,19 @@ const STATIC_PAGES = [
   { loc: '/about', priority: '0.4', changefreq: 'yearly' },
 ];
 
-function esc(s) {
+function escAttr(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 router.get('/sitemap.xml', async (_req, res) => {
@@ -46,7 +55,7 @@ router.get('/sitemap.xml', async (_req, res) => {
     const cats = await Category.findAll({ where: { is_active: true }, attributes: ['slug', 'updatedAt'] });
     for (const c of cats) {
       const lm = (c.updatedAt || new Date()).toISOString().split('T')[0];
-      urls.push(`<url><loc>${BASE}/category/${esc(c.slug)}</loc><lastmod>${lm}</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>`);
+      urls.push(`<url><loc>${BASE}/category/${escAttr(c.slug)}</loc><lastmod>${lm}</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>`);
     }
     const services = await Service.findAll({
       where: { status: 'approved' },
@@ -168,10 +177,135 @@ function metaForService(svc) {
   };
 }
 
-// Resolve route metadata. Returns { meta, found }. `found: false` means
-// the path doesn't match any known SPA route (or the DB row was missing)
-// and the caller should respond 404 + noindex so search engines drop the
-// URL instead of indexing the SPA shell as a phantom canonical.
+const LB_TYPE_BY_SLUG = {
+  hospitals: 'Hospital', clinics: 'MedicalClinic', pharmacies: 'Pharmacy',
+  hotels: 'Hotel', restaurants: 'Restaurant', cafes: 'CafeOrCoffeeShop',
+  banks: 'BankOrCreditUnion', 'gas-stations': 'GasStation',
+  shops: 'Store', transport: 'LocalBusiness',
+  government: 'GovernmentOffice', education: 'EducationalOrganization',
+  tourism: 'TouristAttraction',
+};
+
+function absImage(url) {
+  if (!url) return null;
+  if (String(url).toLowerCase().includes('unsplash.com')) return null;
+  return url.startsWith('http') ? url : BASE + url;
+}
+
+function serviceBodySsr(svc) {
+  const cat = svc.category || {};
+  const lbType = LB_TYPE_BY_SLUG[cat.slug] || 'LocalBusiness';
+  const img = absImage(svc.image_url);
+
+  const lbLd = {
+    '@context': 'https://schema.org',
+    '@type': lbType,
+    '@id': `${BASE}/service/${svc.id}#business`,
+    name: svc.name,
+    url: `${BASE}/service/${svc.id}`,
+    ...(svc.phone && { telephone: svc.phone }),
+    ...(img && { image: img }),
+    ...(svc.description && { description: String(svc.description).slice(0, 500) }),
+    ...((svc.address || svc.city) && {
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: svc.address || '',
+        addressLocality: svc.city || 'قنا',
+        addressRegion: 'محافظة قنا',
+        addressCountry: 'EG',
+      },
+    }),
+    ...(svc.lat && svc.lng && {
+      geo: { '@type': 'GeoCoordinates', latitude: Number(svc.lat), longitude: Number(svc.lng) },
+    }),
+    ...(svc.working_hours && { openingHours: svc.working_hours }),
+    ...(svc.website && { sameAs: [svc.website] }),
+  };
+
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: `${BASE}/` },
+      cat.slug && { '@type': 'ListItem', position: 2, name: cat.name, item: `${BASE}/category/${cat.slug}` },
+      { '@type': 'ListItem', position: cat.slug ? 3 : 2, name: svc.name, item: `${BASE}/service/${svc.id}` },
+    ].filter(Boolean),
+  };
+
+  // Rendered INSIDE <div id="root">. React's createRoot().render() wipes this
+  // on mount (no hydration) so users only see it for a few hundred ms; crawlers
+  // and no-JS users see the full content. Includes a breadcrumb, H1, key
+  // contact fields, and the description.
+  const rows = [];
+  if (svc.address) rows.push(['العنوان', escHtml(svc.address)]);
+  if (svc.phone) rows.push(['هاتف', `<a href="tel:${escAttr(svc.phone)}">${escHtml(svc.phone)}</a>`]);
+  if (svc.alt_phone) rows.push(['هاتف آخر', `<a href="tel:${escAttr(svc.alt_phone)}">${escHtml(svc.alt_phone)}</a>`]);
+  if (svc.whatsapp) rows.push(['واتساب', escHtml(svc.whatsapp)]);
+  if (svc.working_hours) rows.push(['مواعيد العمل', escHtml(svc.working_hours)]);
+  if (svc.price_range) rows.push(['الأسعار', escHtml(svc.price_range)]);
+  if (svc.website) rows.push(['الموقع', `<a href="${escAttr(svc.website)}" rel="noopener">${escHtml(svc.website)}</a>`]);
+
+  const bodyHtml = `
+<div dir="rtl" lang="ar" style="font-family:Cairo,Tajawal,sans-serif;padding:1rem;max-width:1100px;margin:0 auto">
+  <nav aria-label="breadcrumb" style="font-size:0.85rem;color:#64748b;margin-bottom:0.75rem">
+    <a href="/" style="color:#0c4a6e">الرئيسية</a>
+    ${cat.slug ? ` › <a href="/category/${escAttr(cat.slug)}" style="color:#0c4a6e">${escHtml(cat.name)}</a>` : ''}
+    › <span>${escHtml(svc.name)}</span>
+  </nav>
+  <h1 style="font-size:1.75rem;font-weight:800;color:#0f172a;margin:0 0 0.5rem">${escHtml(svc.name)}</h1>
+  ${cat.name ? `<p style="color:#475569;margin:0 0 1rem"><strong>${escHtml(cat.name)}</strong>${svc.city ? ' · ' + escHtml(svc.city) + '، محافظة قنا' : '، محافظة قنا'}</p>` : ''}
+  ${svc.description ? `<p style="line-height:1.8;color:#334155;margin:0 0 1rem">${escHtml(svc.description)}</p>` : ''}
+  ${rows.length ? `<dl style="display:grid;grid-template-columns:auto 1fr;gap:0.5rem 1rem;margin:0">${
+    rows.map(([k, v]) => `<dt style="color:#64748b;font-size:0.9rem">${k}</dt><dd style="margin:0;color:#0f172a">${v}</dd>`).join('')
+  }</dl>` : ''}
+  ${img ? `<img src="${escAttr(img)}" alt="${escAttr(svc.name)}" style="max-width:100%;height:auto;margin-top:1rem;border-radius:0.75rem" loading="lazy">` : ''}
+</div>`;
+
+  const ldHtml = `<script type="application/ld+json">${JSON.stringify(lbLd)}</script>\n<script type="application/ld+json">${JSON.stringify(breadcrumbLd)}</script>`;
+  return { bodyHtml, ldHtml, img };
+}
+
+function categoryBodySsr(cat, services) {
+  const itemListLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `${cat.name} في محافظة قنا`,
+    numberOfItems: services.length,
+    itemListElement: services.slice(0, 50).map((s, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `${BASE}/service/${s.id}`,
+      name: s.name,
+    })),
+  };
+
+  const items = services.slice(0, 100).map((s) => {
+    const parts = [];
+    if (s.city) parts.push(escHtml(s.city));
+    if (s.address) parts.push(escHtml(s.address));
+    if (s.phone) parts.push(`<a href="tel:${escAttr(s.phone)}">${escHtml(s.phone)}</a>`);
+    return `<li style="padding:0.5rem 0;border-bottom:1px solid #f1f5f9"><a href="/service/${s.id}" style="color:#0c4a6e;font-weight:600">${escHtml(s.name)}</a>${parts.length ? ` <span style="color:#64748b;font-size:0.85rem"> · ${parts.join(' · ')}</span>` : ''}</li>`;
+  }).join('');
+
+  const bodyHtml = `
+<div dir="rtl" lang="ar" style="font-family:Cairo,Tajawal,sans-serif;padding:1rem;max-width:1100px;margin:0 auto">
+  <nav aria-label="breadcrumb" style="font-size:0.85rem;color:#64748b;margin-bottom:0.75rem">
+    <a href="/" style="color:#0c4a6e">الرئيسية</a> › <span>${escHtml(cat.name)}</span>
+  </nav>
+  <h1 style="font-size:1.75rem;font-weight:800;color:#0f172a;margin:0 0 0.5rem">${escHtml(cat.name)} في محافظة قنا</h1>
+  ${cat.description ? `<p style="line-height:1.8;color:#334155;margin:0 0 1rem">${escHtml(cat.description)}</p>` : ''}
+  <p style="color:#64748b;margin:0 0 1rem">${services.length.toLocaleString('ar-EG')} نتيجة في قنا، قفط، قوص، نجع حمادي، دشنا، فرشوط، أبو تشت، نقادة، الوقف.</p>
+  ${items ? `<ul style="list-style:none;padding:0;margin:0">${items}</ul>` : ''}
+</div>`;
+
+  const ldHtml = `<script type="application/ld+json">${JSON.stringify(itemListLd)}</script>`;
+  return { bodyHtml, ldHtml };
+}
+
+// Resolve route metadata and (optionally) per-route body content. Returns
+// { meta, found, body, ld, ogImage }. `found: false` means the URL doesn't
+// match any known SPA route (or the DB row was missing) and the caller
+// should respond 404 + noindex.
 async function metaFor(reqPath) {
   let p = (reqPath || '/').split('?')[0];
   if (p.length > 1) p = p.replace(/\/+$/, '');
@@ -180,7 +314,6 @@ async function metaFor(reqPath) {
   if (STATIC_META[p]) return { meta: STATIC_META[p], found: true };
 
   // /admin and subpaths — known SPA routes, but excluded from indexing.
-  // Serve the SPA shell with default meta and a noindex tag.
   if (p === '/admin' || p.startsWith('/admin/')) {
     return { meta: STATIC_META['/'], found: true, noindex: true };
   }
@@ -189,11 +322,24 @@ async function metaFor(reqPath) {
   if (m) {
     try {
       const cat = await Category.findOne({ where: { slug: m[1], is_active: true } });
-      if (cat) return { meta: metaForCategory(cat), found: true };
-      return { meta: STATIC_META['/'], found: false };
+      if (!cat) return { meta: STATIC_META['/'], found: false };
+
+      // Best-effort: load top services for the body. If it fails, we still
+      // serve the page with just the H1 + category description.
+      let services = [];
+      try {
+        services = await Service.findAll({
+          where: { status: 'approved', category_id: cat.id },
+          attributes: ['id', 'name', 'city', 'address', 'phone'],
+          order: [['is_featured', 'DESC'], ['id', 'DESC']],
+          limit: 100,
+        });
+      } catch (_) { /* keep empty list */ }
+
+      const { bodyHtml, ldHtml } = categoryBodySsr(cat, services);
+      return { meta: metaForCategory(cat), found: true, body: bodyHtml, ld: ldHtml };
     } catch (_) {
-      // DB unreachable — keep the page indexable rather than 404'ing every
-      // category whenever the connection blips. Generic category meta + 200.
+      // DB unreachable — keep page indexable with generic meta + no body.
       return { meta: STATIC_META['/category/all'], found: true };
     }
   }
@@ -205,10 +351,12 @@ async function metaFor(reqPath) {
         where: { id: m[1], status: 'approved' },
         include: [{ model: Category, as: 'category', attributes: ['name', 'slug'] }],
       });
-      if (svc) return { meta: metaForService(svc), found: true };
-      return { meta: STATIC_META['/'], found: false };
+      if (!svc) return { meta: STATIC_META['/'], found: false };
+
+      const { bodyHtml, ldHtml, img } = serviceBodySsr(svc);
+      return { meta: metaForService(svc), found: true, body: bodyHtml, ld: ldHtml, ogImage: img };
     } catch (_) {
-      // DB unreachable — see comment above.
+      // DB unreachable — degrade but stay indexable rather than 404'ing.
       return { meta: STATIC_META['/'], found: true };
     }
   }
@@ -218,14 +366,16 @@ async function metaFor(reqPath) {
 
 async function renderForPath(reqPath, res) {
   try {
-    const { meta, found, noindex } = await metaFor(reqPath);
+    const ctx = await metaFor(reqPath);
+    const { meta, found, noindex, body, ld, ogImage } = ctx;
     const canonical = found
       ? BASE + (reqPath === '/' ? '/' : reqPath.replace(/\/+$/, ''))
       : BASE + '/';
 
-    const titleEsc = esc(meta.title);
-    const descEsc = esc(meta.description);
-    const canonEsc = esc(canonical);
+    const titleEsc = escAttr(meta.title);
+    const descEsc = escAttr(meta.description);
+    const canonEsc = escAttr(canonical);
+    const ogImg = ogImage ? escAttr(ogImage) : null;
 
     let html = getIndexHtml()
       .replace(/<title>[^<]*<\/title>/, `<title>${titleEsc}</title>`)
@@ -237,9 +387,30 @@ async function renderForPath(reqPath, res) {
       .replace(/(<meta\s+name="twitter:title"\s+content=")[^"]*(")/, `$1${titleEsc}$2`)
       .replace(/(<meta\s+name="twitter:description"\s+content=")[^"]*(")/, `$1${descEsc}$2`);
 
-    // For unknown URLs (not a real SPA route or missing DB row) and admin
-    // routes: replace the indexable robots meta with a noindex tag so search
-    // engines drop the URL instead of indexing the SPA shell.
+    if (ogImg) {
+      html = html
+        .replace(/(<meta\s+property="og:image"\s+content=")[^"]*(")/, `$1${ogImg}$2`)
+        .replace(/(<meta\s+name="twitter:image"\s+content=")[^"]*(")/, `$1${ogImg}$2`);
+    }
+
+    // Per-route body content. Injected inside <div id="root"> so React's
+    // createRoot().render() wipes it on mount (no hydration mismatch).
+    // Until React runs, Googlebot / no-JS users see a fully unique body —
+    // this is what fixes the "Alternate page with proper canonical tag" and
+    // "Duplicate, Google chose different canonical" issues.
+    if (body) {
+      html = html.replace('<div id="root"></div>', `<div id="root">${body}</div>`);
+    }
+
+    // Per-route structured data: LocalBusiness + BreadcrumbList (services)
+    // or ItemList (categories). Inserted just before </body> so the static
+    // Organization/WebSite blocks in <head> remain untouched.
+    if (ld) {
+      html = html.replace('</body>', `${ld}\n</body>`);
+    }
+
+    // For unknown URLs and admin routes: add noindex so Google drops them
+    // instead of indexing the SPA shell as a phantom canonical.
     if (!found || noindex) {
       html = html.replace(
         /<meta\s+name="robots"\s+content="[^"]*"\s*\/>/,

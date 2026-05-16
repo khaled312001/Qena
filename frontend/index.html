@@ -194,12 +194,13 @@
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
     <div id="root"></div>
-    <!-- Fallback H1 + noscript description for crawlers that don't execute JS -->
+    <!-- Per-route SSR content is injected inside #root by backend/src/routes/seo.js
+         (LocalBusiness/BreadcrumbList/ItemList JSON-LD + visible H1/fields).
+         React's createRoot().render() wipes it on mount so users see the
+         live SPA, while crawlers and no-JS visitors see a fully populated page. -->
     <noscript>
       <div style="padding:20px;font-family:sans-serif;direction:rtl;text-align:right">
-        <h1>قناوي — دليل قنا الشامل</h1>
-        <p>دليل محافظة قنا الشامل المجاني. مستشفيات، أطباء بكل التخصصات، صيدليات 24 ساعة، فنادق، مطاعم، بنوك، مصالح حكومية، معابد أثرية، وأرقام طوارئ. يغطي قنا، قفط، قوص، نجع حمادي، دشنا، فرشوط، أبو تشت، نقادة، والوقف.</p>
-        <p>للعمل بشكل كامل، الرجاء تفعيل JavaScript في المتصفح.</p>
+        <p>للحصول على التجربة الكاملة، الرجاء تفعيل JavaScript في المتصفح.</p>
       </div>
     </noscript>
     <script type="module" src="/src/main.jsx"></script>
