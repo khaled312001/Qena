@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sSI \"https://www.qinawy.com/\" -A \"Googlebot\")",
+      "Bash(curl -sSI \"http://qinawy.com/\" -A \"Googlebot\")",
+      "Bash(curl -sSI \"http://www.qinawy.com/\" -A \"Googlebot\")",
+      "Bash(curl -sSI \"https://www.qinawy.com/category/gas-stations\" -A \"Googlebot\")",
+      "Bash(curl -sSIL \"http://www.qinawy.com/\" -A \"Googlebot\")",
+      "Bash(curl -sS \"https://qinawy.com/sitemap.xml\" -A Googlebot)"
+    ]
+  }
+}
