@@ -25,6 +25,19 @@ const STATIC_PAGES = [
   { loc: '/submit/rental', priority: '0.6', changefreq: 'weekly' },
   { loc: '/submit/driver', priority: '0.6', changefreq: 'weekly' },
   { loc: '/about', priority: '0.4', changefreq: 'yearly' },
+  { loc: '/contact', priority: '0.5', changefreq: 'yearly' },
+  { loc: '/privacy', priority: '0.3', changefreq: 'yearly' },
+  { loc: '/terms', priority: '0.3', changefreq: 'yearly' },
+  { loc: '/guides', priority: '0.9', changefreq: 'weekly' },
+  { loc: '/guides/hospitals-qena', priority: '0.8', changefreq: 'monthly' },
+  { loc: '/guides/pharmacies-24h-qena', priority: '0.8', changefreq: 'monthly' },
+  { loc: '/guides/dendera-temple-guide', priority: '0.85', changefreq: 'monthly' },
+  { loc: '/guides/qena-to-cairo-transport', priority: '0.8', changefreq: 'monthly' },
+  { loc: '/guides/restaurants-qena', priority: '0.75', changefreq: 'monthly' },
+  { loc: '/guides/hotels-qena', priority: '0.75', changefreq: 'monthly' },
+  { loc: '/guides/banks-atm-qena', priority: '0.75', changefreq: 'monthly' },
+  { loc: '/guides/qena-landmarks', priority: '0.8', changefreq: 'monthly' },
+  { loc: '/guides/qena-emergency-numbers', priority: '0.85', changefreq: 'monthly' },
 ];
 
 function escAttr(s) {
@@ -154,6 +167,58 @@ const STATIC_META = {
   '/category/all': {
     title: 'كل الخدمات في قنا | قناوي - دليل قنا الشامل',
     description: 'تصفح كل الخدمات في محافظة قنا — مستشفيات، صيدليات، عيادات، فنادق، مطاعم، بنوك، مدارس، وأكثر.',
+  },
+  '/privacy': {
+    title: 'سياسة الخصوصية | قناوي - دليل قنا',
+    description: 'سياسة الخصوصية لموقع قناوي (qinawy.com). البيانات التي نجمعها، الكوكيز، إعلانات Google AdSense، وحقوقك كمستخدم.',
+  },
+  '/terms': {
+    title: 'شروط الاستخدام | قناوي - دليل قنا',
+    description: 'شروط استخدام موقع قناوي. قواعد إضافة الخدمات، حقوق المستخدم، الإعلانات، وإخلاء المسؤولية عن دقة البيانات.',
+  },
+  '/contact': {
+    title: 'تواصل معنا | قناوي - دليل قنا',
+    description: 'تواصل مع فريق قناوي - دليل محافظة قنا. أرقام تليفون، بريد إلكتروني، ونموذج رسالة للاقتراحات والشراكات.',
+  },
+  '/guides': {
+    title: 'الأدلة والمقالات | قناوي - دليل قنا الشامل',
+    description: 'مقالات وأدلة عن محافظة قنا: مستشفيات، صيدليات، فنادق، مطاعم، معبد دندرة، الانتقال للقاهرة، البنوك، والمعالم السياحية.',
+  },
+  '/guides/hospitals-qena': {
+    title: 'دليل أفضل مستشفيات قنا 2026 — حكومية وخاصة | قناوي',
+    description: 'دليل مفصّل لكل مستشفيات محافظة قنا: الجامعي، العام، الجديدة، التأمين الصحي، ومستشفيات النواحي. تخصصات، أرقام، عيادات خارجية، طوارئ.',
+  },
+  '/guides/pharmacies-24h-qena': {
+    title: 'صيدليات قنا 24 ساعة — أرقام، توصيل، وأقرب فرع | قناوي',
+    description: 'دليل صيدليات قنا التي تعمل ٢٤ ساعة، أرقام التوصيل المنزلي، وأكبر سلاسل الصيدليات في كل مراكز محافظة قنا.',
+  },
+  '/guides/dendera-temple-guide': {
+    title: 'معبد دندرة الكامل — التاريخ، المواعيد، وكيف تصل | قناوي',
+    description: 'دليل سياحي شامل عن معبد دندرة (معبد حتحور) في قنا. تاريخه، مواعيد الزيارة، تذاكر 2026، وكيف تصل من قنا أو القاهرة.',
+  },
+  '/guides/qena-to-cairo-transport': {
+    title: 'الانتقال من قنا للقاهرة — قطار، أتوبيس، سيارة | قناوي',
+    description: 'مقارنة بين السفر من قنا للقاهرة بالقطار، بأتوبيسات Super Jet وGoBus، أو بالسيارة الخاصة. أسعار ومواعيد ومدة 2026.',
+  },
+  '/guides/restaurants-qena': {
+    title: 'أفضل مطاعم قنا — مشويات، أسماك، شرقي وغربي | قناوي',
+    description: 'دليل المطاعم في محافظة قنا. أشهر مطاعم المشويات، أسماك النيل، كشري، حمام محشي، ومطاعم البيتزا والفاست فود.',
+  },
+  '/guides/hotels-qena': {
+    title: 'فنادق قنا — حجز، أسعار، والأقرب لمعابد دندرة | قناوي',
+    description: 'دليل فنادق محافظة قنا في 2026. من فنادق وسط المدينة، إلى منتجعات على النيل، والأقرب لمعبد دندرة.',
+  },
+  '/guides/banks-atm-qena': {
+    title: 'بنوك وصرافات قنا — الأهلي، مصر، CIB، QNB | قناوي',
+    description: 'دليل بنوك محافظة قنا 2026: فروع الأهلي، مصر، QNB، CIB، وأماكن الصرافات الآلية ٢٤ ساعة في كل المراكز.',
+  },
+  '/guides/qena-landmarks': {
+    title: 'معالم قنا السياحية — معابد، أديرة، ومواقع أثرية | قناوي',
+    description: 'جولة كاملة في معالم محافظة قنا: معبد دندرة، معبد قفط، نقادة الأثرية، دير الصليب، قلعة الشيخ همام.',
+  },
+  '/guides/qena-emergency-numbers': {
+    title: 'أرقام الطوارئ والخدمات الحكومية في قنا — احفظها الآن | قناوي',
+    description: 'دليل شامل لأرقام الطوارئ في محافظة قنا: نجدة، إسعاف، مطافئ، شكاوى كهرباء ومياه وغاز، إنقاذ الطرق، وأرقام المحافظة.',
   },
 };
 

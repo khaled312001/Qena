@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Phone, MapPin, Clock, DollarSign, Globe, MessageCircle, ChevronRight, Edit3, Info } from 'lucide-react';
+import { Phone, MapPin, Clock, DollarSign, Globe, MessageCircle, ChevronRight, Edit3, Info, Navigation2, BookOpen } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import api from '../lib/api.js';
@@ -17,14 +17,160 @@ const markerIcon = new L.Icon({
   iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41],
 });
 
+// Map a category slug → guide article slug to cross-link rich content from
+// service pages. AdSense rewards internal linking to editorial content.
+const GUIDE_BY_CATEGORY = {
+  hospitals: 'hospitals-qena',
+  clinics: 'hospitals-qena',
+  pharmacies: 'pharmacies-24h-qena',
+  hotels: 'hotels-qena',
+  restaurants: 'restaurants-qena',
+  banks: 'banks-atm-qena',
+  tourism: 'qena-landmarks',
+  transport: 'qena-to-cairo-transport',
+  'private-transport': 'qena-to-cairo-transport',
+};
+
+const GUIDE_TITLE_BY_CATEGORY = {
+  hospitals: 'دليل أفضل مستشفيات قنا',
+  clinics: 'دليل المستشفيات والعيادات في قنا',
+  pharmacies: 'صيدليات قنا 24 ساعة',
+  hotels: 'دليل فنادق قنا',
+  restaurants: 'أفضل مطاعم قنا',
+  banks: 'بنوك وصرافات قنا',
+  tourism: 'معالم قنا السياحية',
+  transport: 'الانتقال من قنا للقاهرة',
+  'private-transport': 'الانتقال من قنا للقاهرة',
+};
+
+// Generate a unique "about this place" paragraph from the service's own fields.
+// Each service gets prose Google can index — not just contact info.
+function buildAboutText(s, catName) {
+  const sentences = [];
+  const city = s.city || 'قنا';
+  sentences.push(`${s.name} هي إحدى ${catName || 'الخدمات'} الموجودة في ${city}، محافظة قنا، صعيد مصر.`);
+  if (s.address) {
+    sentences.push(`المكان يقع في: ${s.address}.`);
+  }
+  if (s.working_hours) {
+    sentences.push(`مواعيد العمل: ${s.working_hours}.`);
+  }
+  if (s.phone) {
+    sentences.push(`يمكنك التواصل المباشر مع ${s.name} عبر الرقم ${s.phone} للاستفسار عن أي تفاصيل قبل الزيارة.`);
+  }
+  if (s.price_range) {
+    sentences.push(`نطاق الأسعار: ${s.price_range}.`);
+  }
+  if (s.website) {
+    sentences.push(`الموقع الإلكتروني الرسمي: ${s.website}.`);
+  }
+  if (s.whatsapp) {
+    sentences.push(`متاح أيضاً التواصل عبر واتساب: ${s.whatsapp}.`);
+  }
+  if (s.lat && s.lng) {
+    sentences.push(`الموقع الجغرافي محدد بدقة على خريطة قناوي، ويمكنك فتحه مباشرة في خرائط جوجل للحصول على اتجاهات القيادة من موقعك الحالي.`);
+  }
+  sentences.push(`جميع البيانات في صفحة ${s.name} تم تجميعها وتحديثها من خلال فريق قناوي ومساهمات المستخدمين، وإذا لاحظت أي معلومة تحتاج تصحيحاً، يمكنك استخدام زر "إرسال تصحيح" داخل الصفحة.`);
+  return sentences.join(' ');
+}
+
+// Tips paragraph by category — small editorial blurbs targeted at the user's
+// actual intent for that type of place. Adds unique words per page beyond
+// the database row.
+function tipsByCategory(slug, s) {
+  const tips = {
+    hospitals: [
+      'إذا كانت الحالة طارئة، توجّه فوراً لقسم الطوارئ بدون انتظار حجز.',
+      'لو كنت من خارج المدينة، احرص على معرفة موقف السيارات قبل الذهاب.',
+      'احمل بطاقتك الشخصية وأي تقارير طبية سابقة معك.',
+      'اتصل قبل الذهاب للتأكد من توفر الطبيب أو التخصص المطلوب.',
+    ],
+    clinics: [
+      'اتصل لحجز موعد كشف قبل الذهاب لتجنّب الانتظار.',
+      'اسأل عن سعر الكشف وسعر الفحوصات المطلوبة.',
+      'احمل أي تقارير أو أشعة سابقة معك.',
+      'بعض العيادات تخصم رسوم الإعادة خلال 15 يوم.',
+    ],
+    pharmacies: [
+      'لو تحتاج روشتة، احمل صورة منها على تليفونك.',
+      'اسأل عن البديل الجنريك الأرخص لو الدواء غالي.',
+      'افحص تاريخ صلاحية الدواء قبل ترك الصيدلية.',
+      'كثير من صيدليات قنا تقدّم خدمة توصيل بدون رسوم للطلبات الكبيرة.',
+    ],
+    hotels: [
+      'اسأل عن السعر شاملاً الإفطار والضرائب.',
+      'تأكد من توفر مكيف لو الزيارة في الصيف.',
+      'الحجز قبل أسبوع من زيارة معبد دندرة موصى به.',
+      'الحجز عبر منصات الإنترنت قد يكون أرخص من الحجز المباشر.',
+    ],
+    restaurants: [
+      'اسأل عن السعر قبل الطلب — كثير من المطاعم لا تعرض قائمة أسعار.',
+      'الإكرامية 5-10٪ من الفاتورة معتاد.',
+      'للحجز في المناسبات، اتصل قبل يوم على الأقل.',
+      'اطلب مياه معدنية مغلقة إذا كنت من خارج قنا.',
+    ],
+    cafes: [
+      'الكافيهات تكون أكثر هدوءاً صباحاً وأكثر ازدحاماً مساءً.',
+      'الحد الأدنى للطلب موجود في بعض الكافيهات — اسأل قبل الجلوس.',
+      'كثير من الكافيهات لديها واي فاي مجاني للزبائن.',
+    ],
+    banks: [
+      'مواعيد العمل الرسمية للبنوك في مصر: الأحد-الخميس 8:30 صباحاً - 3 ظهراً.',
+      'في رمضان: من 9 صباحاً حتى 1 ظهراً عادة.',
+      'احرص على معرفة الأوراق المطلوبة قبل الذهاب لتجنّب الاستياء.',
+      'لاستفسار سريع، اتصل بخط البنك الساخن قبل الذهاب.',
+    ],
+    'gas-stations': [
+      'كثير من محطات الوقود تعمل ٢٤ ساعة.',
+      'احمل نقوداً سائلة — ليس كل المحطات تقبل بطاقات الائتمان.',
+      'بعض المحطات تقدّم خدمات تغيير زيت، غسيل، وتبديل إطارات.',
+    ],
+    schools: [
+      'مواعيد التسجيل تختلف حسب نوع المدرسة (حكومية/خاصة).',
+      'احرص على معرفة الكتب المطلوبة والزي الموحد قبل بداية العام.',
+      'اسأل عن خدمات الباص ومواعيد الإنصراف.',
+    ],
+    tourism: [
+      'الموسم الأفضل للزيارة: أكتوبر-أبريل (الجو معتدل).',
+      'احمل ماء وقبعة، خاصة للمعابد المكشوفة.',
+      'استئجار مرشد محلي يكشف تفاصيل لن تجدها في الكتيبات.',
+      'بعض المواقع تتطلب تذكرة منفصلة للتصوير.',
+    ],
+    government: [
+      'مواعيد العمل: الأحد-الخميس 9 صباحاً - 2 ظهراً عادة.',
+      'احمل أصل بطاقتك وصور كافية.',
+      'اسأل قبل الذهاب عن الأوراق المطلوبة للخدمة.',
+      'بعض الخدمات الآن متاحة إلكترونياً عبر بوابة الحكومة المصرية.',
+    ],
+  };
+  return tips[slug] || [
+    'تواصل مع الخدمة قبل الذهاب للتأكد من ساعات العمل.',
+    'احفظ رقم المكان في تليفونك للوصول السريع.',
+    'لو وجدت معلومة غير دقيقة، أرسل لنا تصحيحاً ليستفيد الجميع.',
+  ];
+}
+
 export default function ServiceDetail() {
   const { id } = useParams();
   const [s, setS] = useState(null);
+  const [related, setRelated] = useState([]);
   const [loading, setLoading] = useState(true);
   const [correcting, setCorrecting] = useState(false);
 
   useEffect(() => {
-    api.get(`/services/${id}`).then((r) => setS(r.data)).finally(() => setLoading(false));
+    setLoading(true);
+    api.get(`/services/${id}`).then((r) => {
+      setS(r.data);
+      // Fetch related services in same category (limit 6, exclude this one).
+      const catSlug = r.data?.category?.slug;
+      if (catSlug) {
+        api.get('/services', { params: { category: catSlug, includeCategory: '0', limit: 8 } })
+          .then((rr) => {
+            const others = (rr.data.rows || []).filter((x) => x.id !== r.data.id).slice(0, 6);
+            setRelated(others);
+          }).catch(() => {});
+      }
+    }).finally(() => setLoading(false));
   }, [id]);
 
   if (loading) return <div className="container-p py-16 text-center text-slate-500">جارٍ التحميل...</div>;
@@ -183,6 +329,90 @@ export default function ServiceDetail() {
                   <MapPin className="w-4 h-4" /> فتح في خرائط جوجل
                 </a>
               </div>
+            </div>
+          )}
+
+          {/* About this place — auto-generated unique paragraph from the
+              service's own fields. Gives Googlebot + readers a textual summary
+              beyond the contact form. */}
+          <div className="card p-5">
+            <h2 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <Info className="w-4 h-4 text-brand-600" /> عن {s.name}
+            </h2>
+            <p className="text-slate-700 leading-8 text-sm sm:text-base">
+              {buildAboutText(s, cat.name)}
+            </p>
+          </div>
+
+          {/* How to find it — tips specific to this category */}
+          <div className="card p-5">
+            <h2 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <Navigation2 className="w-4 h-4 text-brand-600" /> كيف تصل لـ{s.name} ونصائح قبل الزيارة
+            </h2>
+            <p className="text-slate-700 leading-8 text-sm mb-3">
+              {s.address
+                ? `${s.name} يقع في ${s.address}، ${s.city || 'قنا'}. `
+                : `${s.name} يقع في ${s.city || 'قنا'}، محافظة قنا. `}
+              {hasMap
+                ? 'الموقع محدد بدقة على الخريطة أعلاه — يمكنك الضغط على "فتح في خرائط جوجل" للحصول على اتجاهات القيادة من موقعك.'
+                : 'للحصول على الاتجاهات بدقة، اتصل بالرقم في الأعلى أو ابحث عن الاسم في خرائط جوجل.'}
+            </p>
+            <ul className="list-disc pr-5 space-y-1.5 text-sm text-slate-700 leading-7">
+              {tipsByCategory(cat.slug, s).map((t, i) => (
+                <li key={i}>{t}</li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Cross-link to the guide article for this category. Internal
+              linking to long-form editorial content boosts AdSense quality
+              signals and Google ranking. */}
+          {GUIDE_BY_CATEGORY[cat.slug] && (
+            <Link to={`/guides/${GUIDE_BY_CATEGORY[cat.slug]}`}
+                  className="card p-5 hover:ring-2 hover:ring-brand-300 transition block group">
+              <div className="flex items-start gap-3">
+                <div className="w-11 h-11 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center shrink-0">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-slate-500 mb-0.5">مقال ذو صلة</div>
+                  <div className="font-bold text-slate-900 group-hover:text-brand-700 transition">
+                    {GUIDE_TITLE_BY_CATEGORY[cat.slug]}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1 leading-6">
+                    دليل تفصيلي مكتوب يساعدك تختار أفضل {cat.name} في قنا.
+                  </p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-brand-600 transition shrink-0" />
+              </div>
+            </Link>
+          )}
+
+          {/* Related services in the same category */}
+          {related.length > 0 && (
+            <div className="card p-5">
+              <h2 className="font-bold text-slate-900 mb-3">
+                {cat.name ? `${cat.name} أخرى في قنا` : 'خدمات أخرى مشابهة'}
+              </h2>
+              <ul className="divide-y divide-slate-100">
+                {related.map((r) => (
+                  <li key={r.id} className="py-2.5">
+                    <Link to={`/service/${r.id}`} className="block hover:bg-slate-50 -mx-2 px-2 py-1 rounded transition">
+                      <div className="font-semibold text-slate-800 text-sm">{r.name}</div>
+                      <div className="text-xs text-slate-500 mt-0.5 flex flex-wrap gap-x-2">
+                        {r.city && <span>{r.city}</span>}
+                        {r.address && <span className="truncate max-w-[200px]">{r.address}</span>}
+                        {r.phone && <span dir="ltr">{r.phone}</span>}
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {cat.slug && (
+                <Link to={`/category/${cat.slug}`} className="btn-outline w-full justify-center mt-4 text-sm">
+                  عرض كل {cat.name} في قنا
+                </Link>
+              )}
             </div>
           )}
         </div>

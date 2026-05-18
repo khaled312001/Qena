@@ -9,19 +9,19 @@ export default function About() {
         <div className="container-p py-16 relative">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl">
             <div className="inline-flex items-center gap-2 bg-white/15 px-3 py-1.5 rounded-full text-xs mb-4">
-              <Heart className="w-4 h-4" /> مبادرة خيرية مجانية — لا إعلانات، لا رسوم
+              <Heart className="w-4 h-4" /> مبادرة خدمية مجانية الاستخدام لسكان قنا
             </div>
             <h1 className="text-3xl md:text-5xl font-extrabold mb-3">عن قناوي</h1>
             <p className="text-white/90 leading-7 sm:leading-8 text-sm sm:text-base md:text-lg">
-              قناوي (qinawy.com) مبادرة مجانية من <b className="text-amber-300">شركة برمجلي</b> لسكان محافظة قنا. تجميع كل المعلومات والخدمات التي يحتاجها المواطن في مكان واحد — من مستشفيات وفنادق ومطاعم وأرقام طوارئ وحتى معالم سياحية.
+              قناوي (qinawy.com) مبادرة من <b className="text-amber-300">شركة برمجلي</b> لسكان محافظة قنا. تجميع كل المعلومات والخدمات التي يحتاجها المواطن في مكان واحد — من مستشفيات وفنادق ومطاعم وأرقام طوارئ وحتى معالم سياحية. يتم تشغيل الموقع وتطويره المستمر من خلال إيرادات إعلانية بسيطة، لا تخل بتجربة المستخدم.
             </p>
           </motion.div>
         </div>
       </div>
 
       <section className="container-p py-12 grid md:grid-cols-3 gap-6">
-        <Card icon={Gift} title="100% مجاني">
-          الدليل مجاني بالكامل. لا إعلانات مزعجة ولا رسوم اشتراك ولا حدود استخدام. نكرّس وقتنا ومواردنا لخدمة أهلنا في قنا.
+        <Card icon={Gift} title="مجاني للمستخدم">
+          استخدام الدليل مجاني بالكامل بدون رسوم اشتراك أو حدود. تشغيل الموقع وتطويره ممول من إعلانات Google AdSense منضبطة وغير مقتحمة.
         </Card>
         <Card icon={Heart} title="خدمة مجتمعية">
           مبادرة خيرية نقدمها لأهلنا في قنا لتسهيل وصولهم للخدمات بسرعة — مستشفى قريب، صيدلية 24 ساعة، أو رقم طوارئ.

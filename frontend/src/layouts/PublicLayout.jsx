@@ -1,5 +1,5 @@
 import { Outlet, Link, NavLink, useLocation } from 'react-router-dom';
-import { Menu, Phone, Plus, Info, Home, X, MapPin, Scroll, Navigation, Car, BedDouble } from 'lucide-react';
+import { Menu, Phone, Plus, Info, Home, X, MapPin, Scroll, Navigation, Car, BedDouble, BookOpen, Mail, Shield, FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdSlot from '../components/AdSlot.jsx';
@@ -233,6 +233,26 @@ export default function PublicLayout() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link to="/guides" className="hover:text-white transition flex items-center gap-2">
+                  <BookOpen className="w-3.5 h-3.5" /> الأدلة والمقالات
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="hover:text-white transition flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5" /> تواصل معنا
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacy" className="hover:text-white transition flex items-center gap-2">
+                  <Shield className="w-3.5 h-3.5" /> سياسة الخصوصية
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="hover:text-white transition flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5" /> شروط الاستخدام
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
