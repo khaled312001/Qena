@@ -1,6 +1,11 @@
 Options -MultiViews
 
 <IfModule mod_headers.c>
+  # HSTS on EVERY response — including 301 redirects. After one HTTPS visit
+  # the browser stops attempting http:// or www. on its own. (Googlebot
+  # ignores HSTS but real users get a faster experience.)
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
   <FilesMatch "\.(html|js)$">
     Header set Cache-Control "no-cache, no-store, must-revalidate"
     Header set Pragma "no-cache"
