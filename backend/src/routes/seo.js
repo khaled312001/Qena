@@ -251,6 +251,177 @@ const LB_TYPE_BY_SLUG = {
   tourism: 'TouristAttraction',
 };
 
+// Category slug → guide article slug. Used to cross-link service+category
+// pages to long-form editorial content (helps AdSense content quality
+// signals and Google's internal-linking model).
+const GUIDE_BY_CATEGORY = {
+  hospitals: 'hospitals-qena',
+  clinics: 'hospitals-qena',
+  pharmacies: 'pharmacies-24h-qena',
+  hotels: 'hotels-qena',
+  restaurants: 'restaurants-qena',
+  cafes: 'restaurants-qena',
+  banks: 'banks-atm-qena',
+  tourism: 'qena-landmarks',
+  transport: 'qena-to-cairo-transport',
+  'private-transport': 'qena-to-cairo-transport',
+  'student-housing': 'hotels-qena',
+};
+const GUIDE_TITLE_BY_CATEGORY = {
+  hospitals: 'دليل أفضل مستشفيات قنا',
+  clinics: 'دليل المستشفيات والعيادات في قنا',
+  pharmacies: 'صيدليات قنا 24 ساعة',
+  hotels: 'دليل فنادق قنا',
+  restaurants: 'أفضل مطاعم قنا',
+  cafes: 'أفضل مطاعم وكافيهات قنا',
+  banks: 'بنوك وصرافات قنا',
+  tourism: 'معالم قنا السياحية',
+  transport: 'الانتقال من قنا للقاهرة',
+  'private-transport': 'الانتقال من قنا للقاهرة',
+  'student-housing': 'دليل فنادق وسكن قنا',
+};
+
+// Auto-generate a unique "about this place" paragraph from the service's
+// own fields. Each service gets prose Google can index — not just a
+// contact-info card. Mirrors buildAboutText() in ServiceDetail.jsx.
+function buildServiceAboutText(s, catName) {
+  const parts = [];
+  const city = s.city || 'قنا';
+  parts.push(`${s.name} هي إحدى ${catName || 'الخدمات'} الموجودة في ${city}، محافظة قنا، صعيد مصر.`);
+  if (s.address) parts.push(`المكان يقع في: ${s.address}.`);
+  if (s.working_hours) parts.push(`مواعيد العمل: ${s.working_hours}.`);
+  if (s.phone) parts.push(`يمكنك التواصل المباشر مع ${s.name} عبر الرقم ${s.phone} للاستفسار عن أي تفاصيل قبل الزيارة.`);
+  if (s.price_range) parts.push(`نطاق الأسعار: ${s.price_range}.`);
+  if (s.website) parts.push(`الموقع الإلكتروني الرسمي: ${s.website}.`);
+  if (s.whatsapp) parts.push(`متاح أيضاً التواصل عبر واتساب: ${s.whatsapp}.`);
+  if (s.lat && s.lng) parts.push(`الموقع الجغرافي محدد بدقة على خريطة قناوي، ويمكنك فتحه مباشرة في خرائط جوجل للحصول على اتجاهات القيادة من موقعك الحالي.`);
+  parts.push(`جميع البيانات في صفحة ${s.name} تم تجميعها وتحديثها من خلال فريق قناوي ومساهمات المستخدمين، وإذا لاحظت أي معلومة تحتاج تصحيحاً، يمكنك استخدام زر "إرسال تصحيح" داخل الصفحة.`);
+  return parts.join(' ');
+}
+
+// Category-specific tips. Mirrors tipsByCategory() in ServiceDetail.jsx —
+// the duplication is intentional so SSR doesn't depend on bundling the JSX
+// helpers. Both must be kept in sync if you change them.
+const TIPS_BY_CATEGORY = {
+  hospitals: [
+    'إذا كانت الحالة طارئة، توجّه فوراً لقسم الطوارئ بدون انتظار حجز.',
+    'لو كنت من خارج المدينة، احرص على معرفة موقف السيارات قبل الذهاب.',
+    'احمل بطاقتك الشخصية وأي تقارير طبية سابقة معك.',
+    'اتصل قبل الذهاب للتأكد من توفر الطبيب أو التخصص المطلوب.',
+  ],
+  clinics: [
+    'اتصل لحجز موعد كشف قبل الذهاب لتجنّب الانتظار.',
+    'اسأل عن سعر الكشف وسعر الفحوصات المطلوبة.',
+    'احمل أي تقارير أو أشعة سابقة معك.',
+    'بعض العيادات تخصم رسوم الإعادة خلال 15 يوم.',
+  ],
+  pharmacies: [
+    'لو تحتاج روشتة، احمل صورة منها على تليفونك.',
+    'اسأل عن البديل الجنريك الأرخص لو الدواء غالي.',
+    'افحص تاريخ صلاحية الدواء قبل ترك الصيدلية.',
+    'كثير من صيدليات قنا تقدّم خدمة توصيل بدون رسوم للطلبات الكبيرة.',
+  ],
+  hotels: [
+    'اسأل عن السعر شاملاً الإفطار والضرائب.',
+    'تأكد من توفر مكيف لو الزيارة في الصيف.',
+    'الحجز قبل أسبوع من زيارة معبد دندرة موصى به.',
+    'الحجز عبر منصات الإنترنت قد يكون أرخص من الحجز المباشر.',
+  ],
+  restaurants: [
+    'اسأل عن السعر قبل الطلب — كثير من المطاعم لا تعرض قائمة أسعار.',
+    'الإكرامية 5-10٪ من الفاتورة معتاد.',
+    'للحجز في المناسبات، اتصل قبل يوم على الأقل.',
+    'اطلب مياه معدنية مغلقة إذا كنت من خارج قنا.',
+  ],
+  cafes: [
+    'الكافيهات تكون أكثر هدوءاً صباحاً وأكثر ازدحاماً مساءً.',
+    'الحد الأدنى للطلب موجود في بعض الكافيهات — اسأل قبل الجلوس.',
+    'كثير من الكافيهات لديها واي فاي مجاني للزبائن.',
+  ],
+  banks: [
+    'مواعيد العمل الرسمية: الأحد-الخميس 8:30 صباحاً - 3 ظهراً.',
+    'في رمضان: من 9 صباحاً حتى 1 ظهراً عادة.',
+    'احرص على معرفة الأوراق المطلوبة قبل الذهاب لتجنّب الاستياء.',
+    'لاستفسار سريع، اتصل بخط البنك الساخن قبل الذهاب.',
+  ],
+  'gas-stations': [
+    'كثير من محطات الوقود تعمل ٢٤ ساعة.',
+    'احمل نقوداً سائلة — ليس كل المحطات تقبل بطاقات الائتمان.',
+    'بعض المحطات تقدّم خدمات تغيير زيت، غسيل، وتبديل إطارات.',
+  ],
+  schools: [
+    'مواعيد التسجيل تختلف حسب نوع المدرسة (حكومية/خاصة).',
+    'احرص على معرفة الكتب المطلوبة والزي الموحد قبل بداية العام.',
+    'اسأل عن خدمات الباص ومواعيد الإنصراف.',
+  ],
+  tourism: [
+    'الموسم الأفضل للزيارة: أكتوبر-أبريل (الجو معتدل).',
+    'احمل ماء وقبعة، خاصة للمعابد المكشوفة.',
+    'استئجار مرشد محلي يكشف تفاصيل لن تجدها في الكتيبات.',
+    'بعض المواقع تتطلب تذكرة منفصلة للتصوير.',
+  ],
+  government: [
+    'مواعيد العمل: الأحد-الخميس 9 صباحاً - 2 ظهراً عادة.',
+    'احمل أصل بطاقتك وصور كافية.',
+    'اسأل قبل الذهاب عن الأوراق المطلوبة للخدمة.',
+    'بعض الخدمات الآن متاحة إلكترونياً عبر بوابة الحكومة المصرية.',
+  ],
+};
+function tipsByCategory(slug) {
+  return TIPS_BY_CATEGORY[slug] || [
+    'تواصل مع الخدمة قبل الذهاب للتأكد من ساعات العمل.',
+    'احفظ رقم المكان في تليفونك للوصول السريع.',
+    'لو وجدت معلومة غير دقيقة، أرسل لنا تصحيحاً ليستفيد الجميع.',
+  ];
+}
+
+// Common FAQ per category — gives every category page 5+ Q&A pairs of
+// unique editorial content, plus FAQPage JSON-LD for Google rich results.
+const FAQ_BY_CATEGORY = {
+  hospitals: [
+    ['كم مستشفى يوجد في محافظة قنا؟', 'تحوي محافظة قنا عشرات المستشفيات بين حكومية وخاصة وجامعية. أبرزها مستشفى قنا الجامعي التابع لجامعة جنوب الوادي، مستشفى قنا العام التابع لوزارة الصحة، ومستشفى قنا الجديدة، بالإضافة لمستشفيات مركزية في نجع حمادي، قوص، دشنا، فرشوط، ونقادة.'],
+    ['ما أقرب مستشفى طوارئ في قنا؟', 'مستشفى قنا الجامعي هو المرجع الأول للطوارئ في المحافظة لأنه يحوي تخصصات كاملة وعناية مركزة. للحالات البسيطة يكفي المستشفى العام أو المستشفى المركزي بالمركز التابع له.'],
+    ['هل يوجد تأمين صحي يغطّي مستشفيات قنا؟', 'نعم، التأمين الصحي الحكومي يغطّي المستشفيات الحكومية والمراكز التابعة لوزارة الصحة. التأمين الصحي الخاص (Misr Health, Bupa Egypt) يقبله بعض المستشفيات والمراكز الخاصة فقط.'],
+    ['ما رقم الإسعاف في قنا؟', 'رقم الإسعاف الموحد في كل مصر هو 123. يعمل ٢٤ ساعة ومجاني من أي تليفون.'],
+    ['كيف أحصل على موعد عيادة خارجية؟', 'العيادات الخارجية في المستشفيات الحكومية لا تحتاج حجزاً مسبقاً — اذهب صباحاً مبكراً. في المستشفيات الخاصة، اتصل بالرقم الموجود في صفحة المستشفى لحجز موعد.'],
+  ],
+  pharmacies: [
+    ['هل توجد صيدليات تعمل 24 ساعة في قنا؟', 'نعم، عدة فروع لصيدليات العزبي وسيف ومجموعة من الصيدليات المحلية في وسط مدينة قنا ونجع حمادي تعمل ٢٤ ساعة طوال أيام الأسبوع.'],
+    ['هل يمكن توصيل الأدوية للمنزل في قنا؟', 'نعم، أغلب الصيدليات الكبرى تقدّم توصيلاً مجانياً للطلبات فوق 50 جنيه داخل وسط المدينة. اتصل بالرقم لتأكيد التوصيل لمنطقتك.'],
+    ['كيف أعرف الصيدلية المناوبة في قنا أيام الأعياد؟', 'وزارة الصحة تحدد قائمة صيدليات مناوبة في الأعياد الرسمية. القائمة تُنشر على لافتات الصيدليات وعلى صفحة المحافظة الرسمية.'],
+    ['هل أحتاج روشتة طبيب لكل الأدوية؟', 'الأدوية المضادة الحيوية والنفسية والمخدّرة تتطلب روشتة قانونياً. الأدوية الأخرى (مسكنات، فيتامينات، علاجات بسيطة) متاحة بدون روشتة.'],
+    ['ما رقم خدمة توصيل صيدليات العزبي؟', 'الرقم المركزي لصيدليات العزبي هو 19011 ويعمل في كل المحافظات بما فيها قنا.'],
+  ],
+  hotels: [
+    ['ما متوسط سعر فندق ٣ نجوم في قنا؟', 'فنادق ٣ نجوم في وسط مدينة قنا تبدأ من 500 جنيه لليلة في 2026، وقد تصل لـ1000 جنيه حسب الموسم والإطلالة.'],
+    ['ما أقرب فندق لمعبد دندرة؟', 'فنادق وسط مدينة قنا هي الأقرب لمعبد دندرة (5 كم فقط). كثير من السياح يقيمون في الأقصر ويزورون دندرة في رحلة يومية.'],
+    ['هل يوجد فنادق على نهر النيل في قنا؟', 'نعم، يوجد عدة فنادق ومنتجعات تطلّ على نهر النيل في قنا ونجع حمادي. الأسعار أعلى قليلاً من فنادق وسط المدينة.'],
+    ['هل أحتاج حجزاً مسبقاً؟', 'في مواسم السياحة (أكتوبر-فبراير) والأعياد يُفضّل الحجز قبل أسبوع. في باقي الأوقات يمكن الحجز في نفس اليوم.'],
+    ['ما الموسم الأنسب للإقامة في قنا؟', 'من أكتوبر إلى أبريل. الجو معتدل ومناسب للسياحة. تجنّب يونيو-سبتمبر حيث الحرارة قد تصل لـ٤٥ مئوية.'],
+  ],
+  restaurants: [
+    ['ما أشهر الأكلات القناوية؟', 'الفطير المشلتت، المشويات (كباب وكفتة على الفحم)، أسماك النيل (بلطي وقرموط)، الحمام المحشي، البليلة، والعصيدة الصعيدية.'],
+    ['هل توجد خدمة توصيل طعام في قنا؟', 'نعم، تطبيقات طلبات وElmenus تعمل في قنا. كذلك أغلب المطاعم في وسط المدينة لديها توصيل مباشر بنفس اليوم.'],
+    ['هل توجد مطاعم سمك طازج؟', 'نعم، عدة مطاعم متخصصة قرب كورنيش النيل في قنا تقدّم سمك نيلي طازج (بلطي وقرموط) بأسعار أقل من القاهرة بـ30-50٪.'],
+    ['ما متوسط سعر وجبة مشويات للشخص؟', 'وجبة مشويات كاملة (كباب أو كفتة + أرز + سلطات) تتراوح من 150 إلى 300 جنيه للشخص في مطاعم 2026.'],
+    ['هل توجد فروع لMcDonald\'s أو KFC في قنا؟', 'لا، حالياً لا يوجد فروع لهذه السلاسل في قنا. أقرب فروع لها في الأقصر.'],
+  ],
+  banks: [
+    ['ما مواعيد عمل البنوك في قنا؟', 'البنوك تفتح من الأحد إلى الخميس، 8:30 صباحاً حتى 3 ظهراً. الجمعة والسبت إجازة رسمية. في رمضان: 9 صباحاً حتى 1 ظهراً.'],
+    ['ما البنوك الموجودة في قنا؟', 'الأهلي المصري، بنك مصر، بنك الإسكندرية، QNB، CIB، البنك العقاري المصري العربي، بنك التنمية الزراعي، وبنك ناصر الاجتماعي.'],
+    ['أين أجد صراف آلي ATM في قنا؟', 'تنتشر الصرّافات الآلية أمام فروع البنوك، في محطات الوقود الكبرى، وفي المولات والمراكز التجارية. كل صرّاف يقبل بطاقات من أي بنك (شبكة 123).'],
+    ['كيف أفتح حساباً بنكياً في قنا؟', 'تحتاج: بطاقة رقم قومي سارية، إثبات دخل، إثبات عنوان (فاتورة كهرباء)، وإيداع مبدئي (يبدأ من 100 جنيه).'],
+    ['ما أرخص طريقة لتحويل الأموال داخل مصر؟', 'InstaPay من أي بنك لأي بنك مصري — تحويل فوري ومجاني تقريباً. بديل: محافظ المحمول (Vodafone Cash, Etisalat Cash).'],
+  ],
+  tourism: [
+    ['ما أشهر معالم محافظة قنا؟', 'معبد دندرة (معبد حتحور)، معبد قفط، نقادة الأثرية، دير الصليب في نقادة، قلعة الشيخ همام في فرشوط، ومسجد عبد الرحيم القناوي.'],
+    ['كيف أصل لمعبد دندرة؟', 'المعبد يبعد 5 كم شمال مدينة قنا. يمكن الوصول بتاكسي (50-100 جنيه ذهاب) أو سيارة خاصة (10 دقائق). من الأقصر: 60 كم بالسيارة أو القطار.'],
+    ['ما سعر تذكرة معبد دندرة 2026؟', 'للمصري البالغ: 40 جنيه، للمصري الطالب: 10 جنيه، للأجنبي البالغ: 250 جنيه. الأسعار قابلة للتغيير.'],
+    ['ما مواعيد فتح المعابد في قنا؟', 'مواعيد العمل الرسمية: من 8 صباحاً حتى 5 مساءً صيفاً، وحتى 4 مساءً شتاءً.'],
+    ['هل يوجد متحف في قنا؟', 'نعم، افتُتح متحف قنا الحضاري عام 2022 ويعرض قطعاً أثرية محلية من معبد دندرة ومقابر نقادة ومعبد قفط.'],
+  ],
+};
+
 function absImage(url) {
   if (!url) return null;
   if (String(url).toLowerCase().includes('unsplash.com')) return null;
@@ -299,8 +470,9 @@ function serviceBodySsr(svc) {
 
   // Rendered INSIDE <div id="root">. React's createRoot().render() wipes this
   // on mount (no hydration) so users only see it for a few hundred ms; crawlers
-  // and no-JS users see the full content. Includes a breadcrumb, H1, key
-  // contact fields, and the description.
+  // and no-JS users see the full content. Includes a breadcrumb, H1, contact
+  // fields, an auto-generated "about" paragraph, category-specific tips,
+  // and a cross-link to the relevant guide article.
   const rows = [];
   if (svc.address) rows.push(['العنوان', escHtml(svc.address)]);
   if (svc.phone) rows.push(['هاتف', `<a href="tel:${escAttr(svc.phone)}">${escHtml(svc.phone)}</a>`]);
@@ -309,6 +481,11 @@ function serviceBodySsr(svc) {
   if (svc.working_hours) rows.push(['مواعيد العمل', escHtml(svc.working_hours)]);
   if (svc.price_range) rows.push(['الأسعار', escHtml(svc.price_range)]);
   if (svc.website) rows.push(['الموقع', `<a href="${escAttr(svc.website)}" rel="noopener">${escHtml(svc.website)}</a>`]);
+
+  const aboutText = buildServiceAboutText(svc, cat.name);
+  const tips = tipsByCategory(cat.slug);
+  const guideSlug = GUIDE_BY_CATEGORY[cat.slug];
+  const guideTitle = GUIDE_TITLE_BY_CATEGORY[cat.slug];
 
   const bodyHtml = `
 <div dir="rtl" lang="ar" style="font-family:Cairo,Tajawal,sans-serif;padding:1rem;max-width:1100px;margin:0 auto">
@@ -320,9 +497,28 @@ function serviceBodySsr(svc) {
   <h1 style="font-size:1.75rem;font-weight:800;color:#0f172a;margin:0 0 0.5rem">${escHtml(svc.name)}</h1>
   ${cat.name ? `<p style="color:#475569;margin:0 0 1rem"><strong>${escHtml(cat.name)}</strong>${svc.city ? ' · ' + escHtml(svc.city) + '، محافظة قنا' : '، محافظة قنا'}</p>` : ''}
   ${svc.description ? `<p style="line-height:1.8;color:#334155;margin:0 0 1rem">${escHtml(svc.description)}</p>` : ''}
-  ${rows.length ? `<dl style="display:grid;grid-template-columns:auto 1fr;gap:0.5rem 1rem;margin:0">${
+  ${rows.length ? `<dl style="display:grid;grid-template-columns:auto 1fr;gap:0.5rem 1rem;margin:0 0 1.5rem">${
     rows.map(([k, v]) => `<dt style="color:#64748b;font-size:0.9rem">${k}</dt><dd style="margin:0;color:#0f172a">${v}</dd>`).join('')
   }</dl>` : ''}
+
+  <h2 style="font-size:1.25rem;font-weight:700;color:#0f172a;margin:1.5rem 0 0.5rem">عن ${escHtml(svc.name)}</h2>
+  <p style="line-height:1.9;color:#334155;margin:0 0 1.25rem">${escHtml(aboutText)}</p>
+
+  <h2 style="font-size:1.25rem;font-weight:700;color:#0f172a;margin:1.5rem 0 0.5rem">كيف تصل لـ${escHtml(svc.name)} ونصائح قبل الزيارة</h2>
+  ${svc.address
+    ? `<p style="color:#334155;line-height:1.9;margin:0 0 0.75rem">${escHtml(svc.name)} يقع في ${escHtml(svc.address)}، ${escHtml(svc.city || 'قنا')}. ${svc.lat && svc.lng ? 'الموقع الجغرافي محدد بدقة على خريطة قناوي ويمكنك فتحه في خرائط جوجل للحصول على اتجاهات القيادة من موقعك.' : 'للاتجاهات بدقة، اتصل بالرقم أعلاه أو ابحث عن الاسم في خرائط جوجل.'}</p>`
+    : `<p style="color:#334155;line-height:1.9;margin:0 0 0.75rem">${escHtml(svc.name)} يقع في ${escHtml(svc.city || 'قنا')}، محافظة قنا. للاتجاهات بدقة، اتصل بالرقم في الأعلى أو ابحث عن الاسم في خرائط جوجل.</p>`
+  }
+  <ul style="margin:0 0 1.25rem;padding-right:1.25rem;color:#334155;line-height:1.9">
+    ${tips.map((t) => `<li>${escHtml(t)}</li>`).join('')}
+  </ul>
+
+  ${guideSlug ? `<p style="margin:1.5rem 0;padding:1rem;background:#f0f9ff;border-right:4px solid #0ea5e9;border-radius:0.5rem;line-height:1.9;color:#075985">📖 <strong>مقال ذو صلة:</strong> اقرأ <a href="/guides/${escAttr(guideSlug)}" style="color:#0369a1;text-decoration:underline;font-weight:600">${escHtml(guideTitle)}</a> — دليل تفصيلي يساعدك تختار أفضل ${escHtml(cat.name)} في قنا.</p>` : ''}
+
+  <p style="color:#64748b;font-size:0.875rem;line-height:1.8;margin-top:1rem">
+    تنبيه: الأسعار ومواعيد العمل قابلة للتعديل في أي وقت من قبل صاحب المكان. يُرجى التأكد من البيانات عبر الاتصال المباشر قبل الزيارة. ${cat.slug ? `لمزيد من <a href="/category/${escAttr(cat.slug)}" style="color:#0369a1">${escHtml(cat.name)} في قنا</a>، تصفّح قسم ${escHtml(cat.name)} في قناوي.` : ''}
+  </p>
+
   ${img ? `<img src="${escAttr(img)}" alt="${escAttr(svc.name)}" style="max-width:100%;height:auto;margin-top:1rem;border-radius:0.75rem" loading="lazy">` : ''}
 </div>`;
 
@@ -352,18 +548,56 @@ function categoryBodySsr(cat, services) {
     return `<li style="padding:0.5rem 0;border-bottom:1px solid #f1f5f9"><a href="/service/${s.id}" style="color:#0c4a6e;font-weight:600">${escHtml(s.name)}</a>${parts.length ? ` <span style="color:#64748b;font-size:0.85rem"> · ${parts.join(' · ')}</span>` : ''}</li>`;
   }).join('');
 
+  const faq = FAQ_BY_CATEGORY[cat.slug] || [];
+  const guideSlug = GUIDE_BY_CATEGORY[cat.slug];
+  const guideTitle = GUIDE_TITLE_BY_CATEGORY[cat.slug];
+
+  // Intro paragraph — Arabic prose describing this category in Qena.
+  // Generic fallback when DB description is missing.
+  const intro = (cat.description && cat.description.trim()) ||
+    `قسم ${cat.name} في موقع قناوي يجمع كل ${cat.name} في محافظة قنا ومراكزها (قنا، قفط، قوص، نجع حمادي، دشنا، فرشوط، أبو تشت، نقادة، الوقف) مع أرقام التليفون والعناوين ومواعيد العمل، حتى تجد أقرب وأفضل خدمة بسهولة.`;
+
+  const faqHtml = faq.length ? `
+  <h2 style="font-size:1.4rem;font-weight:800;color:#0f172a;margin:2rem 0 1rem">أسئلة شائعة عن ${escHtml(cat.name)} في قنا</h2>
+  <div style="display:grid;gap:0.75rem;margin-bottom:1.5rem">
+    ${faq.map(([q, a]) => `
+      <details style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:0.5rem;padding:0.75rem 1rem" open>
+        <summary style="font-weight:700;color:#0f172a;cursor:pointer;line-height:1.7">${escHtml(q)}</summary>
+        <p style="margin:0.5rem 0 0;color:#475569;line-height:1.9">${escHtml(a)}</p>
+      </details>
+    `).join('')}
+  </div>` : '';
+
   const bodyHtml = `
 <div dir="rtl" lang="ar" style="font-family:Cairo,Tajawal,sans-serif;padding:1rem;max-width:1100px;margin:0 auto">
   <nav aria-label="breadcrumb" style="font-size:0.85rem;color:#64748b;margin-bottom:0.75rem">
     <a href="/" style="color:#0c4a6e">الرئيسية</a> › <span>${escHtml(cat.name)}</span>
   </nav>
   <h1 style="font-size:1.75rem;font-weight:800;color:#0f172a;margin:0 0 0.5rem">${escHtml(cat.name)} في محافظة قنا</h1>
-  ${cat.description ? `<p style="line-height:1.8;color:#334155;margin:0 0 1rem">${escHtml(cat.description)}</p>` : ''}
-  <p style="color:#64748b;margin:0 0 1rem">${services.length.toLocaleString('ar-EG')} نتيجة في قنا، قفط، قوص، نجع حمادي، دشنا، فرشوط، أبو تشت، نقادة، الوقف.</p>
-  ${items ? `<ul style="list-style:none;padding:0;margin:0">${items}</ul>` : ''}
+  <p style="line-height:1.9;color:#334155;margin:0 0 1rem">${escHtml(intro)}</p>
+  <p style="color:#64748b;margin:0 0 1.5rem;font-size:0.95rem">${services.length.toLocaleString('ar-EG')} نتيجة في قنا، قفط، قوص، نجع حمادي، دشنا، فرشوط، أبو تشت، نقادة، الوقف. كل الأرقام والعناوين محدّثة من فريق قناوي ومساهمات السكان.</p>
+
+  ${guideSlug ? `<p style="margin:0 0 1.5rem;padding:0.875rem 1rem;background:#fef3c7;border-right:4px solid #f59e0b;border-radius:0.5rem;line-height:1.9;color:#78350f">📖 <strong>مقال موصى بقراءته:</strong> <a href="/guides/${escAttr(guideSlug)}" style="color:#92400e;text-decoration:underline;font-weight:700">${escHtml(guideTitle)}</a></p>` : ''}
+
+  ${items ? `<h2 style="font-size:1.4rem;font-weight:800;color:#0f172a;margin:1.5rem 0 0.75rem">قائمة ${escHtml(cat.name)} في قنا</h2><ul style="list-style:none;padding:0;margin:0 0 2rem">${items}</ul>` : ''}
+
+  ${faqHtml}
 </div>`;
 
-  const ldHtml = `<script type="application/ld+json">${JSON.stringify(itemListLd)}</script>`;
+  const lds = [JSON.stringify(itemListLd)];
+  if (faq.length) {
+    const faqLd = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faq.map(([q, a]) => ({
+        '@type': 'Question',
+        name: q,
+        acceptedAnswer: { '@type': 'Answer', text: a },
+      })),
+    };
+    lds.push(JSON.stringify(faqLd));
+  }
+  const ldHtml = lds.map((l) => `<script type="application/ld+json">${l}</script>`).join('\n');
   return { bodyHtml, ldHtml };
 }
 
