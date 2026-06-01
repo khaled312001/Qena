@@ -102,9 +102,9 @@ export default function Home() {
 
               {/* Trust row */}
               <div className="mt-5 flex flex-wrap items-center gap-3 sm:gap-4 text-[11px] sm:text-xs text-white/75">
-                <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" /> بيانات محقّقة من Google</span>
-                <span className="inline-flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 text-sky-300" /> بدون إعلانات</span>
-                <span className="inline-flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-amber-300" /> مركز قنا ومراكزها</span>
+                <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" /> بيانات محقّقة ومحدّثة</span>
+                <span className="inline-flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 text-sky-300" /> مجاني للمستخدم</span>
+                <span className="inline-flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-amber-300" /> كل مراكز قنا</span>
               </div>
 
               {/* Search */}
@@ -278,6 +278,56 @@ export default function Home() {
       <div className="container-p">
         <AdSlot slot={AdSlot.INLINE} format="horizontal" />
       </div>
+
+      {/* Editorial intro — substantial original text content for AdSense
+          content quality signals. Sits below the listing UI so users who
+          want to find a service can do so first, then keep scrolling for
+          context about the directory itself. */}
+      <section className="container-p py-10 md:py-14 max-w-4xl">
+        <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-4 leading-snug">
+          دليل قنا — لماذا قناوي؟
+        </h2>
+        <div className="prose prose-slate max-w-none text-slate-700 leading-8 space-y-4">
+          <p>
+            محافظة قنا تمتد على مساحة كبيرة من صعيد مصر، وتضم تسعة مراكز إدارية (قنا، قفط، قوص، نجع حمادي،
+            دشنا، فرشوط، أبو تشت، نقادة، الوقف)، وعشرات القرى. الوصول لخدمة محددة — مستشفى مناسب أو
+            صيدلية مفتوحة الآن أو رقم بنك — كان يتطلب البحث في عشرات المصادر المتفرقة. <b>قناوي</b> يجمع
+            هذه المعلومات في مكان واحد منظّم وقابل للبحث.
+          </p>
+          <p>
+            كل خدمة في الدليل تم التحقق منها يدوياً من قبل فريق العمل أو أحد سكان المنطقة. نراجع الأرقام
+            والعناوين بشكل دوري، ونعتمد على مساهمات المستخدمين عبر زر "إرسال تصحيح" الموجود داخل كل صفحة
+            خدمة. عندما تخبرنا أن رقم تغيّر أو محل أغلق، نحدّث البيانات في أسرع وقت.
+          </p>
+          <p>
+            بجانب دليل الخدمات، تجد في <Link to="/guides" className="text-brand-700 underline font-semibold">قسم الأدلة</Link> مقالات
+            أصلية وموسّعة عن المدينة: من <Link to="/guides/dendera-temple-guide" className="text-brand-700 underline">معبد دندرة</Link> وأسرار حضارته،
+            إلى <Link to="/guides/hospitals-qena" className="text-brand-700 underline">دليل المستشفيات</Link>، و<Link to="/guides/qena-to-cairo-transport" className="text-brand-700 underline">طرق الانتقال للقاهرة</Link>،
+            وحتى <Link to="/guides/qena-emergency-numbers" className="text-brand-700 underline">أرقام الطوارئ التي يجب أن يحفظها كل مواطن</Link>.
+            المقالات مكتوبة بناءً على معرفة محلية وتُحدَّث دورياً.
+          </p>
+          <h3 className="text-lg md:text-xl font-bold text-slate-900 mt-6 mb-2">من نخدم؟</h3>
+          <ul className="list-disc pr-6 space-y-2">
+            <li><b>سكان المحافظة:</b> يجدون أرقام وعناوين الخدمات اليومية في مكان واحد منظّم.</li>
+            <li><b>الزوار والسياح:</b> يخططون رحلتهم لمعابد قنا وأماكن الإقامة والمواصلات.</li>
+            <li><b>الطلاب وأولياء الأمور:</b> يتعرفون على الكليات والمدارس وسكن الطلاب.</li>
+            <li><b>أصحاب الأعمال:</b> يضيفون محلاتهم وخدماتهم مجاناً ليصل لهم العملاء.</li>
+          </ul>
+
+          <h3 className="text-lg md:text-xl font-bold text-slate-900 mt-6 mb-2">كيف نموّل المشروع؟</h3>
+          <p>
+            استخدامك لقناوي مجاني تماماً ولن نطلب منك رسوماً أو اشتراكاً. تشغيل الموقع وتطويره المستمر
+            ممول من إعلانات Google AdSense منضبطة — تظهر بشكل غير مُقتحم بين أقسام المحتوى. لمعرفة
+            تفاصيل الإعلانات والكوكيز راجع <Link to="/privacy" className="text-brand-700 underline">سياسة الخصوصية</Link>.
+          </p>
+
+          <p className="text-sm text-slate-500 mt-6 pt-4 border-t border-slate-100">
+            قناوي مبادرة من <a href="https://barmagly.tech" target="_blank" rel="noreferrer" className="text-brand-700 underline">شركة برمجلي</a> —
+            شركة برمجيات متخصصة في مصر. مقدمة لخدمة محافظتنا بشكل احترافي وبجودة عالية.
+            للتواصل أو الاستفسار: <Link to="/contact" className="text-brand-700 underline">صفحة تواصل معنا</Link>.
+          </p>
+        </div>
+      </section>
 
       {/* CTA */}
       <section className="container-p py-14">

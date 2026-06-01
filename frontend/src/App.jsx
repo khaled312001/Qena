@@ -24,6 +24,9 @@ import HotelsGuide from './pages/guides/HotelsGuide.jsx';
 import BanksGuide from './pages/guides/BanksGuide.jsx';
 import LandmarksGuide from './pages/guides/LandmarksGuide.jsx';
 import EmergencyNumbersGuide from './pages/guides/EmergencyNumbersGuide.jsx';
+import QenaHistoryGuide from './pages/guides/QenaHistoryGuide.jsx';
+import QenaEducationGuide from './pages/guides/QenaEducationGuide.jsx';
+import QenaEconomyGuide from './pages/guides/QenaEconomyGuide.jsx';
 import NotFound from './pages/NotFound.jsx';
 import AdminLogin from './pages/admin/AdminLogin.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
@@ -59,6 +62,9 @@ export default function App() {
         <Route path="/guides/banks-atm-qena" element={<BanksGuide />} />
         <Route path="/guides/qena-landmarks" element={<LandmarksGuide />} />
         <Route path="/guides/qena-emergency-numbers" element={<EmergencyNumbersGuide />} />
+        <Route path="/guides/qena-history" element={<QenaHistoryGuide />} />
+        <Route path="/guides/qena-education" element={<QenaEducationGuide />} />
+        <Route path="/guides/qena-economy" element={<QenaEconomyGuide />} />
         <Route path="*" element={<NotFound />} />
       </Route>
 

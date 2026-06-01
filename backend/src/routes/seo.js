@@ -38,6 +38,9 @@ const STATIC_PAGES = [
   { loc: '/guides/banks-atm-qena', priority: '0.75', changefreq: 'monthly' },
   { loc: '/guides/qena-landmarks', priority: '0.8', changefreq: 'monthly' },
   { loc: '/guides/qena-emergency-numbers', priority: '0.85', changefreq: 'monthly' },
+  { loc: '/guides/qena-history', priority: '0.8', changefreq: 'monthly' },
+  { loc: '/guides/qena-education', priority: '0.8', changefreq: 'monthly' },
+  { loc: '/guides/qena-economy', priority: '0.75', changefreq: 'monthly' },
 ];
 
 function escAttr(s) {
@@ -70,12 +73,17 @@ router.get('/sitemap.xml', async (_req, res) => {
       const lm = (c.updatedAt || new Date()).toISOString().split('T')[0];
       urls.push(`<url><loc>${BASE}/category/${escAttr(c.slug)}</loc><lastmod>${lm}</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>`);
     }
+    // Only include "rich" services in the sitemap — see isThinService() for
+    // the exact rule. Thin services stay reachable via /category/* listings
+    // but aren't promoted to Google as primary content. Keeps AdSense from
+    // seeing thousands of templated near-duplicate pages.
     const services = await Service.findAll({
       where: { status: 'approved' },
-      attributes: ['id', 'updatedAt'],
+      attributes: ['id', 'updatedAt', 'description', 'working_hours', 'website', 'image_url', 'address', 'tags', 'phone'],
       order: [['id', 'ASC']],
     });
     for (const s of services) {
+      if (isThinService(s)) continue;
       const lm = (s.updatedAt || new Date()).toISOString().split('T')[0];
       urls.push(`<url><loc>${BASE}/service/${s.id}</loc><lastmod>${lm}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>`);
     }
@@ -219,6 +227,18 @@ const STATIC_META = {
   '/guides/qena-emergency-numbers': {
     title: 'أرقام الطوارئ والخدمات الحكومية في قنا — احفظها الآن | قناوي',
     description: 'دليل شامل لأرقام الطوارئ في محافظة قنا: نجدة، إسعاف، مطافئ، شكاوى كهرباء ومياه وغاز، إنقاذ الطرق، وأرقام المحافظة.',
+  },
+  '/guides/qena-history': {
+    title: 'تاريخ محافظة قنا — من حضارة نقادة إلى اليوم | قناوي',
+    description: 'رحلة شاملة في تاريخ محافظة قنا: حضارة نقادة قبل الأسرات، العصر الفرعوني، البطلمي، الروماني، القبطي، الإسلامي، حتى مصر الحديثة.',
+  },
+  '/guides/qena-education': {
+    title: 'التعليم في قنا — جامعات، مدارس، معاهد، ومراكز تدريب | قناوي',
+    description: 'دليل التعليم الكامل في محافظة قنا. جامعة جنوب الوادي، كلياتها، المدارس الحكومية والخاصة، المعاهد، وسكن الطلاب.',
+  },
+  '/guides/qena-economy': {
+    title: 'اقتصاد قنا — الزراعة، الصناعة، السياحة، والتجارة | قناوي',
+    description: 'دليل اقتصاد قنا 2026. القطاعات: قصب السكر، الصناعة (الألومنيوم، السكر)، السياحة، التجارة، وفرص الاستثمار.',
   },
 };
 
@@ -426,6 +446,64 @@ function absImage(url) {
   if (!url) return null;
   if (String(url).toLowerCase().includes('unsplash.com')) return null;
   return url.startsWith('http') ? url : BASE + url;
+}
+
+// Detect Google Plus Codes used as fake addresses (e.g. "2Q79+8H4", "5VC9+M2 Qena").
+// These offer no human-readable content value and shouldn't count as a
+// "rich signal" for indexing decisions.
+const PLUS_CODE_RE = /^\s*[23456789CFGHJMPQRVWX]{2,4}[23456789CFGHJMPQRVWX]?\+[23456789CFGHJMPQRVWX]{2,3}(\s|$)/i;
+
+// Templated/auto-generated descriptions (review counters, "5.0 (N reviews)", etc).
+// These give no actual content even though the field is non-empty.
+const TEMPLATED_DESC_RES = [
+  /^\s*تقييم\s*\d+(\.\d+)?\s*\(\s*\d+\s*مراجعة\s*\)\s*$/,
+  /^\s*\d+(\.\d+)?\s*\(\s*\d+\s*reviews?\s*\)\s*$/i,
+  /^\s*rating:?\s*\d/i,
+];
+
+function hasRealDescription(desc) {
+  if (!desc) return false;
+  const t = desc.trim();
+  if (t.length < 40) return false;
+  return !TEMPLATED_DESC_RES.some((re) => re.test(t));
+}
+
+function hasRealAddress(addr) {
+  if (!addr) return false;
+  const t = addr.trim();
+  if (t.length < 5) return false;
+  return !PLUS_CODE_RE.test(t);
+}
+
+function hasRealImage(url) {
+  if (!url) return false;
+  const lower = String(url).toLowerCase();
+  // Skip Unsplash category fallbacks AND third-party hotlinks from random domains
+  // (we want services with images we actually serve or which point to a verified domain).
+  if (lower.includes('unsplash.com')) return false;
+  // Allow images from our own domain or its API path
+  if (lower.startsWith('/') || lower.includes('qinawy.com') || lower.includes('/uploads/')) return true;
+  // External images are sometimes hotlinks to random sites — treat as "not rich" signal
+  return false;
+}
+
+// Returns true if the service has so little distinguishing content that it
+// should be marked noindex + excluded from sitemap. Goal: keep AdSense and
+// Google from seeing thousands of templated "name + phone" pages as our
+// primary content. Threshold of 3+ signals (raised from 2) — empirically
+// services with 2 weak signals (e.g. Plus Code address + 1 tag) still read
+// as thin to Google's quality scoring.
+function isThinService(svc) {
+  const signals = [
+    hasRealDescription(svc.description),
+    !!svc.working_hours,
+    !!svc.website,
+    hasRealImage(svc.image_url),
+    hasRealAddress(svc.address),
+    !!(svc.tags && svc.tags.trim().length > 0),
+    !!svc.phone,  // having a phone is a basic signal — adds 1 to the count
+  ].filter(Boolean).length;
+  return signals < 3;
 }
 
 function serviceBodySsr(svc) {
@@ -653,7 +731,17 @@ async function metaFor(reqPath) {
       if (!svc) return { meta: STATIC_META['/'], found: false };
 
       const { bodyHtml, ldHtml, img } = serviceBodySsr(svc);
-      return { meta: metaForService(svc), found: true, body: bodyHtml, ld: ldHtml, ogImage: img };
+
+      const isThin = isThinService(svc);
+
+      return {
+        meta: metaForService(svc),
+        found: true,
+        body: bodyHtml,
+        ld: ldHtml,
+        ogImage: img,
+        noindex: isThin,
+      };
     } catch (_) {
       // DB unreachable — degrade but stay indexable rather than 404'ing.
       return { meta: STATIC_META['/'], found: true };
