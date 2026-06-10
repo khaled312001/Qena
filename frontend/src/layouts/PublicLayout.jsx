@@ -6,8 +6,9 @@ import AdSlot from '../components/AdSlot.jsx';
 
 const links = [
   { to: '/', label: 'الرئيسية', icon: Home },
-  { to: '/nearby', label: 'الأقرب إليك', icon: Navigation },
+  { to: '/guides', label: 'المقالات', icon: BookOpen },
   { to: '/category/all', label: 'الخدمات', icon: MapPin },
+  { to: '/nearby', label: 'الأقرب إليك', icon: Navigation },
   { to: '/numbers', label: 'أرقام مهمة', icon: Phone },
   { to: '/qena', label: 'عن قنا', icon: Scroll },
   { to: '/submit', label: 'أضف خدمة', icon: Plus },
@@ -236,6 +237,16 @@ export default function PublicLayout() {
               <li>
                 <Link to="/guides" className="hover:text-white transition flex items-center gap-2">
                   <BookOpen className="w-3.5 h-3.5" /> الأدلة والمقالات
+                </Link>
+              </li>
+              <li>
+                <Link to="/team" className="hover:text-white transition flex items-center gap-2">
+                  <Info className="w-3.5 h-3.5" /> فريق قناوي
+                </Link>
+              </li>
+              <li>
+                <Link to="/editorial-policy" className="hover:text-white transition flex items-center gap-2">
+                  <Scroll className="w-3.5 h-3.5" /> السياسة التحريرية
                 </Link>
               </li>
               <li>

@@ -11,10 +11,197 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const { Service, Category } = require('../models');
+const NEW_ARTICLES = require('../data/articles');
+const AUTHORS = require('../data/authors');
+const TEAM = require('../data/team');
+const EDITORIAL_POLICY = require('../data/editorial-policy');
+const STATIC_PAGES_CONTENT = require('../data/staticPages');
 
 const router = express.Router();
 
 const BASE = 'https://qinawy.com';
+
+// Outline-only data for the 12 pre-existing guide articles. Their full prose
+// lives in frontend/src/pages/guides/*Guide.jsx and renders client-side via
+// React. The outlines below let the backend SSR a substantial summary so
+// crawlers (especially AdsBot-Google) see real content before JS executes.
+const EXISTING_GUIDE_OUTLINES = {
+  'hospitals-qena': {
+    title: 'دليل أفضل مستشفيات قنا 2026 — حكومية وخاصة',
+    description: 'دليل مفصّل لكل مستشفيات محافظة قنا: الجامعي، العام، الجديدة، التأمين الصحي، ومستشفيات النواحي. تخصصات، أرقام، عيادات خارجية، طوارئ.',
+    icon: '🏥', read_mins: 8, author: 'khaled-ahmed', reviewed_by: 'qena-correspondent',
+    sections: [
+      'مستشفى قنا الجامعي — المرجع الإقليمي',
+      'مستشفى قنا العام التابع لوزارة الصحة',
+      'مستشفى قنا الجديدة',
+      'مستشفيات النواحي والمراكز',
+      'المستشفيات الخاصة في قنا',
+      'أرقام الطوارئ المهمة في قنا',
+      'نصائح عملية قبل الذهاب لأي مستشفى',
+    ],
+  },
+  'pharmacies-24h-qena': {
+    title: 'صيدليات قنا 24 ساعة — أرقام، توصيل، وأقرب فرع',
+    description: 'دليل صيدليات قنا التي تعمل ٢٤ ساعة، أرقام التوصيل المنزلي، وأكبر سلاسل الصيدليات في كل مراكز محافظة قنا.',
+    icon: '💊', read_mins: 6, author: 'khaled-ahmed', reviewed_by: 'qena-correspondent',
+    sections: [
+      'أكبر سلاسل الصيدليات في قنا',
+      'الصيدليات المحلية في كل مركز',
+      'كيف تجد صيدلية مفتوحة الآن',
+      'توصيل الأدوية في قنا',
+      'متى تحتاج روشتة طبيب',
+      'الصيدليات في الأعياد والإجازات',
+    ],
+  },
+  'dendera-temple-guide': {
+    title: 'معبد دندرة الكامل — التاريخ، المواعيد، وكيف تصل',
+    description: 'دليل سياحي شامل عن معبد دندرة (معبد حتحور) في قنا. تاريخه، مواعيد الزيارة، تذاكر 2026، وكيف تصل من قنا أو القاهرة.',
+    icon: '🏛️', read_mins: 10, author: 'qena-historian', reviewed_by: 'khaled-ahmed',
+    sections: [
+      'لماذا دندرة مهم؟',
+      'تاريخ المعبد باختصار',
+      'أبرز ما تشاهده داخل المعبد',
+      'زودياك دندرة (السقف الفلكي)',
+      'كيف تصل لمعبد دندرة',
+      'المواعيد وأسعار التذاكر (2026)',
+      'نصائح قبل الزيارة',
+    ],
+  },
+  'qena-to-cairo-transport': {
+    title: 'الانتقال من قنا للقاهرة — قطار، أتوبيس، أو سيارة',
+    description: 'مقارنة بين السفر من قنا للقاهرة بالقطار، بأتوبيسات Super Jet وGoBus، أو بالسيارة الخاصة. أسعار ومواعيد ومدة 2026.',
+    icon: '🚆', read_mins: 7, author: 'khaled-ahmed', reviewed_by: 'qena-correspondent',
+    sections: [
+      'المسافة والوقت — نظرة سريعة',
+      'القطار — الأكثر شعبية',
+      'الأتوبيسات — Super Jet وGoBus',
+      'السيارة الخاصة',
+      'الطيران',
+      'أيهما أفضل لرحلتي؟',
+      'عند الوصول للقاهرة',
+    ],
+  },
+  'restaurants-qena': {
+    title: 'أفضل مطاعم قنا — مشويات، أسماك، شرقي وغربي',
+    description: 'دليل المطاعم في محافظة قنا. أشهر مطاعم المشويات، أسماك النيل، كشري، حمام محشي، ومطاعم البيتزا والفاست فود.',
+    icon: '🍽️', read_mins: 6, author: 'qena-correspondent', reviewed_by: 'khaled-ahmed',
+    sections: [
+      'المطبخ القناوي — ما يميّزه',
+      'أشهر مطاعم وسط مدينة قنا',
+      'مطاعم الأسماك على النيل',
+      'مطاعم البيتزا والفاست فود',
+      'مطاعم نجع حمادي',
+      'الكافيهات في قنا',
+      'توصيل الطعام',
+    ],
+  },
+  'hotels-qena': {
+    title: 'فنادق قنا — حجز، أسعار، والأقرب لمعابد دندرة',
+    description: 'دليل فنادق محافظة قنا في 2026. من فنادق وسط المدينة، إلى منتجعات على النيل، والأقرب لمعبد دندرة.',
+    icon: '🏨', read_mins: 5, author: 'ahmed-kamal', reviewed_by: 'qena-correspondent',
+    sections: [
+      'أنواع الإقامة المتاحة في قنا',
+      'متوسط أسعار الفنادق (2026)',
+      'الفندق المناسب لكل غرض',
+      'كيف تحجز فندق في قنا',
+      'ما يجب أن تسأل عنه قبل الحجز',
+      'نصائح إقامة عملية',
+    ],
+  },
+  'banks-atm-qena': {
+    title: 'بنوك وصرافات قنا — الأهلي، مصر، CIB، QNB وأكثر',
+    description: 'دليل بنوك محافظة قنا 2026: فروع الأهلي، مصر، QNB، CIB، وأماكن الصرافات الآلية ٢٤ ساعة في كل المراكز.',
+    icon: '🏦', read_mins: 6, author: 'khaled-ahmed', reviewed_by: 'ahmed-kamal',
+    sections: [
+      'البنوك الحكومية الكبرى في قنا',
+      'البنوك الخاصة والاستثمارية',
+      'مواعيد عمل البنوك',
+      'الصرّافات الآلية في قنا',
+      'كيف تفتح حساباً بنكياً',
+      'الشهادات وحسابات الادخار',
+      'أرقام الطوارئ المصرفية',
+    ],
+  },
+  'qena-landmarks': {
+    title: 'معالم قنا السياحية — معابد، أديرة، ومواقع أثرية',
+    description: 'جولة كاملة في معالم محافظة قنا: معبد دندرة، معبد قفط، نقادة الأثرية، دير الصليب، قلعة الشيخ همام.',
+    icon: '🗺️', read_mins: 9, author: 'qena-historian', reviewed_by: 'qena-correspondent',
+    sections: [
+      'معبد دندرة (معبد حتحور)',
+      'معبد قفط (Coptos)',
+      'نقادة الأثرية',
+      'دير الصليب في نقادة',
+      'معبد شنهور',
+      'مسجد عبد الرحيم القناوي',
+      'قلعة الشيخ همام في فرشوط',
+      'كورنيش النيل في قنا',
+      'متحف قنا',
+    ],
+  },
+  'qena-emergency-numbers': {
+    title: 'أرقام الطوارئ والخدمات الحكومية في قنا — احفظها الآن',
+    description: 'دليل شامل لأرقام الطوارئ في محافظة قنا: نجدة، إسعاف، مطافئ، شكاوى كهرباء ومياه وغاز، إنقاذ الطرق.',
+    icon: '🚨', read_mins: 5, author: 'khaled-ahmed', reviewed_by: 'qena-historian',
+    sections: [
+      'أرقام الطوارئ الأساسية (موحدة لكل مصر)',
+      'متى تتصل بالإسعاف؟',
+      'أرقام الشكاوى الحكومية',
+      'أرقام محافظة قنا',
+      'كيف تستخدم هذه الأرقام بفعالية',
+      'إذا لم يستجب أحد',
+      'نصائح أمان عامة',
+    ],
+  },
+  'qena-history': {
+    title: 'تاريخ محافظة قنا — من حضارة نقادة إلى اليوم',
+    description: 'رحلة شاملة في تاريخ محافظة قنا: حضارة نقادة قبل الأسرات، العصر الفرعوني، البطلمي، الروماني، القبطي، الإسلامي، حتى مصر الحديثة.',
+    icon: '📜', read_mins: 12, author: 'qena-historian', reviewed_by: 'khaled-ahmed',
+    sections: [
+      'ما قبل الأسرات — حضارة نقادة (4400-3100 ق.م)',
+      'العصر الفرعوني — قفط وقنا في الأسرات',
+      'العصر البطلمي والروماني (332 ق.م - 395 م)',
+      'العصر القبطي والمسيحي (4-7 م)',
+      'العصر الإسلامي المبكر (640-1250 م)',
+      'العصر المملوكي والعثماني (1250-1800 م)',
+      'عصر محمد علي والاحتلال البريطاني',
+      'مصر الحديثة (1952 - اليوم)',
+    ],
+  },
+  'qena-education': {
+    title: 'التعليم في قنا — جامعات، مدارس، معاهد، ومراكز تدريب',
+    description: 'دليل التعليم الكامل في محافظة قنا. جامعة جنوب الوادي، كلياتها، المدارس الحكومية والخاصة، المعاهد، وسكن الطلاب.',
+    icon: '🎓', read_mins: 8, author: 'khaled-ahmed', reviewed_by: 'ahmed-kamal',
+    sections: [
+      'جامعة جنوب الوادي — قلب التعليم العالي',
+      'الأزهر الشريف في قنا',
+      'التعليم قبل الجامعي',
+      'المعاهد الفنية والمهنية',
+      'مراكز الدروس والكورسات',
+      'التعليم الإلكتروني والمنح',
+      'مكتبات قنا',
+    ],
+  },
+  'qena-economy': {
+    title: 'اقتصاد قنا — الزراعة، الصناعة، السياحة، والتجارة',
+    description: 'دليل اقتصاد قنا 2026. القطاعات: قصب السكر، الصناعة (الألومنيوم، السكر)، السياحة، التجارة، وفرص الاستثمار.',
+    icon: '💼', read_mins: 9, author: 'ahmed-kamal', reviewed_by: 'qena-historian',
+    sections: [
+      'القطاع الزراعي — العمود الفقري',
+      'القطاع الصناعي — التصنيع الثقيل',
+      'السياحة — قطاع نمو',
+      'التجارة المحلية',
+      'القطاع المصرفي والمالي',
+      'النقل والمواصلات',
+      'الخدمات الصحية والتعليمية',
+      'فرص العمل والاستثمار',
+    ],
+  },
+};
+
+const ALL_GUIDE_SLUGS = [
+  ...Object.keys(EXISTING_GUIDE_OUTLINES),
+  ...Object.keys(NEW_ARTICLES),
+];
 
 const STATIC_PAGES = [
   { loc: '/', priority: '1.0', changefreq: 'daily' },
@@ -24,23 +211,25 @@ const STATIC_PAGES = [
   { loc: '/submit', priority: '0.5', changefreq: 'monthly' },
   { loc: '/submit/rental', priority: '0.6', changefreq: 'weekly' },
   { loc: '/submit/driver', priority: '0.6', changefreq: 'weekly' },
-  { loc: '/about', priority: '0.4', changefreq: 'yearly' },
+  { loc: '/about', priority: '0.6', changefreq: 'monthly' },
+  { loc: '/team', priority: '0.6', changefreq: 'monthly' },
+  { loc: '/editorial-policy', priority: '0.5', changefreq: 'monthly' },
   { loc: '/contact', priority: '0.5', changefreq: 'yearly' },
   { loc: '/privacy', priority: '0.3', changefreq: 'yearly' },
   { loc: '/terms', priority: '0.3', changefreq: 'yearly' },
-  { loc: '/guides', priority: '0.9', changefreq: 'weekly' },
-  { loc: '/guides/hospitals-qena', priority: '0.8', changefreq: 'monthly' },
-  { loc: '/guides/pharmacies-24h-qena', priority: '0.8', changefreq: 'monthly' },
-  { loc: '/guides/dendera-temple-guide', priority: '0.85', changefreq: 'monthly' },
-  { loc: '/guides/qena-to-cairo-transport', priority: '0.8', changefreq: 'monthly' },
-  { loc: '/guides/restaurants-qena', priority: '0.75', changefreq: 'monthly' },
-  { loc: '/guides/hotels-qena', priority: '0.75', changefreq: 'monthly' },
-  { loc: '/guides/banks-atm-qena', priority: '0.75', changefreq: 'monthly' },
-  { loc: '/guides/qena-landmarks', priority: '0.8', changefreq: 'monthly' },
-  { loc: '/guides/qena-emergency-numbers', priority: '0.85', changefreq: 'monthly' },
-  { loc: '/guides/qena-history', priority: '0.8', changefreq: 'monthly' },
-  { loc: '/guides/qena-education', priority: '0.8', changefreq: 'monthly' },
-  { loc: '/guides/qena-economy', priority: '0.75', changefreq: 'monthly' },
+  { loc: '/guides', priority: '0.95', changefreq: 'weekly' },
+  // 12 existing guides
+  ...Object.keys(EXISTING_GUIDE_OUTLINES).map((slug) => ({
+    loc: `/guides/${slug}`, priority: '0.85', changefreq: 'monthly',
+  })),
+  // 7 new long-form articles
+  ...Object.keys(NEW_ARTICLES).map((slug) => ({
+    loc: `/guides/${slug}`, priority: '0.9', changefreq: 'monthly',
+  })),
+  // 4 author pages
+  ...Object.keys(AUTHORS).map((slug) => ({
+    loc: `/author/${slug}`, priority: '0.5', changefreq: 'monthly',
+  })),
 ];
 
 function escAttr(s) {
@@ -98,11 +287,25 @@ router.get('/sitemap.xml', async (_req, res) => {
 });
 
 router.get('/robots.txt', (_req, res) => {
+  // Block AdSense quality crawlers (Mediapartners-Google, AdsBot-Google)
+  // from /service/:id — they evaluate content quality for ad-eligibility,
+  // and our editorial pages should be what they score, not the thin
+  // listing pages. See audit notes in commit history.
   const txt = [
     'User-agent: *',
     'Allow: /',
     'Disallow: /admin',
+    'Disallow: /admin/',
     'Disallow: /api/',
+    '',
+    'User-agent: Mediapartners-Google',
+    'Disallow: /service/',
+    '',
+    'User-agent: AdsBot-Google',
+    'Disallow: /service/',
+    '',
+    'User-agent: AdsBot-Google-Mobile',
+    'Disallow: /service/',
     '',
     `Sitemap: ${BASE}/sitemap.xml`,
   ].join('\n');
@@ -240,6 +443,26 @@ const STATIC_META = {
     title: 'اقتصاد قنا — الزراعة، الصناعة، السياحة، والتجارة | قناوي',
     description: 'دليل اقتصاد قنا 2026. القطاعات: قصب السكر، الصناعة (الألومنيوم، السكر)، السياحة، التجارة، وفرص الاستثمار.',
   },
+  // 7 new long-form articles (titles + descriptions sourced from data/articles.js)
+  ...Object.fromEntries(Object.entries(NEW_ARTICLES).map(([slug, art]) => [
+    `/guides/${slug}`, { title: `${art.title} | قناوي`, description: art.description }
+  ])),
+  // Editorial trust pages
+  '/team': {
+    title: 'فريق قناوي — مؤسسون ومحررون ومراجعون',
+    description: 'تعرّف على فريق قناوي: المؤسسون من شركة برمجلي، باحث التاريخ، المراسلة الميدانية، المراجع الطبي، والمحررة اللغوية.',
+  },
+  '/editorial-policy': {
+    title: 'السياسة التحريرية | قناوي - دليل قنا',
+    description: 'سياسة قناوي التحريرية: كيف نختار المحتوى، كيف نتحقق من المعلومات، التصحيحات، شفافية الإعلانات، وعلاقتنا مع المعلنين.',
+  },
+  // Author pages (built dynamically from data/authors.js)
+  ...Object.fromEntries(Object.entries(AUTHORS).map(([slug, a]) => [
+    `/author/${slug}`, {
+      title: `${a.name} — ${a.role} | كتّاب قناوي`,
+      description: `${a.name}، ${a.role}. ${a.bio.slice(0, 180)}`,
+    }
+  ])),
 };
 
 function metaForCategory(cat) {
@@ -679,6 +902,351 @@ function categoryBodySsr(cat, services) {
   return { bodyHtml, ldHtml };
 }
 
+// ---------- Universal content renderers ----------
+// SSR rich body content for ALL non-DB pages: home, about, qena, privacy,
+// terms, contact, team, editorial-policy, guides index, individual guide
+// articles, and author bio pages. Each returns { bodyHtml, ldHtml }.
+// React's createRoot wipes this on hydration; crawlers and no-JS visitors
+// see it.
+
+function renderSectionsHtml(sections) {
+  if (!Array.isArray(sections)) return '';
+  return sections.map((sec) => {
+    const parts = [];
+    const h2 = sec.h2 || sec.h2_arabic;
+    if (h2) {
+      parts.push(`<h2 style="font-size:1.4rem;font-weight:800;color:#0f172a;margin:1.75rem 0 0.75rem">${escHtml(h2)}</h2>`);
+    }
+    // paragraphs may be a single string (callout) or array
+    const paragraphs = sec.paragraphs || [];
+    for (const p of paragraphs) {
+      // Allow inline HTML (links) inside paragraphs — they came from trusted data files
+      parts.push(`<p style="line-height:1.95;color:#334155;margin:0 0 0.85rem">${p}</p>`);
+    }
+    // bullet_lists with intro + items
+    const lists = sec.bullet_lists || sec.lists || [];
+    for (const list of lists) {
+      if (list.intro) parts.push(`<p style="line-height:1.95;color:#334155;margin:0.5rem 0">${list.intro}</p>`);
+      parts.push(`<ul style="margin:0 0 1rem;padding-right:1.5rem;color:#334155;line-height:1.95">${
+        (list.items || []).map((it) => `<li style="margin:0.35rem 0">${it}</li>`).join('')
+      }</ul>`);
+    }
+    // h3_subsections
+    const subs = sec.h3_subsections || sec.subsections || [];
+    for (const sub of subs) {
+      const h3 = sub.h3 || sub.h3_arabic;
+      if (h3) parts.push(`<h3 style="font-size:1.1rem;font-weight:700;color:#0f172a;margin:1.25rem 0 0.5rem">${escHtml(h3)}</h3>`);
+      if (sub.body) parts.push(`<p style="line-height:1.95;color:#334155;margin:0 0 0.85rem">${sub.body}</p>`);
+    }
+    // callout_box
+    if (sec.callout_box) {
+      parts.push(`<blockquote style="border-right:4px solid #0ea5e9;background:#f0f9ff;padding:0.85rem 1rem;margin:1rem 0;border-radius:0.5rem;color:#075985;line-height:1.85">${sec.callout_box}</blockquote>`);
+    }
+    return parts.join('\n');
+  }).join('\n');
+}
+
+function staticPageBodySsr(p, pageMeta) {
+  const data = STATIC_PAGES_CONTENT[p];
+  if (!data) return null;
+  const sectionsHtml = renderSectionsHtml(data.sections);
+  const bodyHtml = `
+<div dir="rtl" lang="ar" style="font-family:Cairo,Tajawal,sans-serif;padding:1.25rem;max-width:1100px;margin:0 auto">
+  <h1 style="font-size:2rem;font-weight:900;color:#0f172a;margin:0 0 0.75rem;line-height:1.25">${escHtml(data.heroH1)}</h1>
+  <p style="font-size:1.05rem;line-height:1.95;color:#475569;margin:0 0 1.5rem;padding-bottom:1rem;border-bottom:1px solid #e2e8f0">${escHtml(data.heroIntro)}</p>
+  ${sectionsHtml}
+  ${data.conclusion ? `<p style="line-height:1.95;color:#334155;margin:1.75rem 0 0;padding-top:1rem;border-top:1px solid #e2e8f0;font-style:italic">${data.conclusion}</p>` : ''}
+</div>`;
+  return { bodyHtml, ldHtml: '' };
+}
+
+function guideArticleBodySsr(slug) {
+  const isNew = !!NEW_ARTICLES[slug];
+  const isExisting = !!EXISTING_GUIDE_OUTLINES[slug];
+  if (!isNew && !isExisting) return null;
+
+  const data = isNew ? NEW_ARTICLES[slug] : EXISTING_GUIDE_OUTLINES[slug];
+  const author = AUTHORS[data.author] || null;
+  const reviewer = AUTHORS[data.reviewed_by] || null;
+
+  // For new articles: render full prose. For existing: render outline +
+  // section headings only (full prose is in the React JSX file and shows
+  // after hydration).
+  let sectionsHtml = '';
+  if (isNew) {
+    sectionsHtml = renderSectionsHtml(data.sections);
+  } else {
+    // Outline-only SSR for the 12 existing articles
+    sectionsHtml = `
+<p style="line-height:1.95;color:#334155;margin:0 0 1.25rem">${escHtml(data.description)}</p>
+<h2 style="font-size:1.25rem;font-weight:800;color:#0f172a;margin:1.75rem 0 0.75rem">ما يغطّيه هذا الدليل</h2>
+<ul style="margin:0 0 1.25rem;padding-right:1.5rem;color:#334155;line-height:1.95">
+${(data.sections || []).map((s) => `  <li style="margin:0.4rem 0">${escHtml(s)}</li>`).join('\n')}
+</ul>
+<p style="line-height:1.95;color:#334155;margin:1rem 0">
+  للنص الكامل تابع المقال أدناه. يحتوي على شرح تفصيلي وأمثلة ملموسة، ويُحدَّث دورياً بناءً على ملاحظات القرّاء وتطورات الواقع.
+</p>`;
+  }
+
+  const intro = isNew ? data.intro : data.description;
+  const conclusion = isNew ? data.conclusion : '';
+
+  const dateStr = (data.published || '2026-06-07').slice(0, 10);
+
+  const articleLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: data.title,
+    description: data.description,
+    inLanguage: 'ar',
+    datePublished: data.published || dateStr,
+    dateModified: data.modified || dateStr,
+    author: author ? {
+      '@type': 'Person',
+      name: author.name,
+      url: `${BASE}/author/${data.author}`,
+      jobTitle: author.role,
+    } : { '@type': 'Organization', name: 'قناوي - شركة برمجلي', url: BASE },
+    publisher: {
+      '@type': 'Organization',
+      name: 'قناوي',
+      logo: { '@type': 'ImageObject', url: `${BASE}/logo.svg` },
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': `${BASE}/guides/${slug}` },
+    image: `${BASE}/logo.svg`,
+    keywords: data.keywords || '',
+  };
+
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: `${BASE}/` },
+      { '@type': 'ListItem', position: 2, name: 'الأدلة والمقالات', item: `${BASE}/guides` },
+      { '@type': 'ListItem', position: 3, name: data.title, item: `${BASE}/guides/${slug}` },
+    ],
+  };
+
+  const bylineHtml = author ? `
+<div style="display:flex;align-items:center;gap:0.85rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:0.6rem;padding:0.85rem 1rem;margin:1.25rem 0">
+  <div style="font-size:1.75rem">${escHtml(author.icon || '👤')}</div>
+  <div style="flex:1">
+    <div style="font-size:0.85rem;color:#64748b">كتب هذا المقال</div>
+    <div style="font-weight:700;color:#0f172a">
+      <a href="/author/${escAttr(data.author)}" style="color:#0c4a6e;text-decoration:none">${escHtml(author.name)}</a>
+    </div>
+    <div style="font-size:0.85rem;color:#475569">${escHtml(author.role)}</div>
+  </div>
+  ${reviewer ? `<div style="text-align:left;font-size:0.8rem;color:#64748b;border-right:1px solid #e2e8f0;padding-right:0.85rem">
+    <div>راجعه</div>
+    <div style="color:#0f172a;font-weight:600"><a href="/author/${escAttr(data.reviewed_by)}" style="color:#0f172a;text-decoration:none">${escHtml(reviewer.name)}</a></div>
+  </div>` : ''}
+</div>` : '';
+
+  const takeawaysHtml = (isNew && data.key_takeaways && data.key_takeaways.length) ? `
+<div style="background:#fef3c7;border-right:4px solid #f59e0b;border-radius:0.5rem;padding:1rem 1.25rem;margin:1.5rem 0">
+  <div style="font-weight:800;color:#78350f;margin-bottom:0.5rem">أهم ما يقوله المقال</div>
+  <ul style="margin:0;padding-right:1.25rem;color:#78350f;line-height:1.85">
+    ${data.key_takeaways.map((t) => `<li style="margin:0.25rem 0">${escHtml(t)}</li>`).join('')}
+  </ul>
+</div>` : '';
+
+  const relatedHtml = (isNew && data.related_topics && data.related_topics.length) ? `
+<div style="border-top:1px solid #e2e8f0;margin-top:2rem;padding-top:1.25rem">
+  <div style="font-weight:700;color:#0f172a;margin-bottom:0.5rem">مواضيع ذات صلة</div>
+  <div style="display:flex;flex-wrap:wrap;gap:0.5rem">
+    ${data.related_topics.map((t) => `<span style="background:#e0f2fe;color:#075985;padding:0.3rem 0.75rem;border-radius:9999px;font-size:0.85rem">${escHtml(t)}</span>`).join('')}
+  </div>
+</div>` : '';
+
+  const bodyHtml = `
+<div dir="rtl" lang="ar" style="font-family:Cairo,Tajawal,sans-serif;padding:1.25rem;max-width:780px;margin:0 auto">
+  <nav aria-label="breadcrumb" style="font-size:0.85rem;color:#64748b;margin-bottom:0.75rem">
+    <a href="/" style="color:#0c4a6e">الرئيسية</a> ›
+    <a href="/guides" style="color:#0c4a6e">الأدلة والمقالات</a> ›
+    <span>${escHtml(data.title)}</span>
+  </nav>
+  <h1 style="font-size:2rem;font-weight:900;color:#0f172a;margin:0 0 0.5rem;line-height:1.2">${escHtml(data.title)}</h1>
+  <div style="display:flex;gap:1rem;color:#64748b;font-size:0.85rem;margin-bottom:0.75rem">
+    <span>${data.read_mins || 8} دقائق قراءة</span>
+    <span>·</span>
+    <span>آخر تحديث: ${dateStr}</span>
+  </div>
+  ${bylineHtml}
+  ${takeawaysHtml}
+  <div style="font-size:1.05rem;line-height:1.95;color:#1e293b;margin:1rem 0 1.5rem">
+    ${typeof intro === 'string' ? intro : ''}
+  </div>
+  ${sectionsHtml}
+  ${conclusion ? `<div style="line-height:1.95;color:#1e293b;margin:1.5rem 0 0;padding:1rem 1.25rem;background:#f8fafc;border-radius:0.6rem;border-right:3px solid #0ea5e9">${conclusion}</div>` : ''}
+  ${relatedHtml}
+</div>`;
+
+  const ldHtml = `<script type="application/ld+json">${JSON.stringify(articleLd)}</script>\n<script type="application/ld+json">${JSON.stringify(breadcrumbLd)}</script>`;
+  return { bodyHtml, ldHtml };
+}
+
+function guidesIndexBodySsr() {
+  const allGuides = [];
+  for (const [slug, art] of Object.entries(NEW_ARTICLES)) {
+    allGuides.push({ slug, title: art.title, description: art.description, icon: art.icon, color: art.color, read_mins: art.read_mins, author: art.author, isNew: true });
+  }
+  for (const [slug, g] of Object.entries(EXISTING_GUIDE_OUTLINES)) {
+    allGuides.push({ slug, title: g.title, description: g.description, icon: g.icon, read_mins: g.read_mins, author: g.author, isNew: false });
+  }
+
+  const cardsHtml = allGuides.map((g) => {
+    const author = AUTHORS[g.author];
+    return `
+<a href="/guides/${escAttr(g.slug)}" style="display:block;padding:1.25rem;border:1px solid #e2e8f0;border-radius:0.75rem;background:#fff;text-decoration:none;color:inherit;transition:all 0.2s">
+  <div style="display:flex;gap:0.75rem;align-items:flex-start;margin-bottom:0.5rem">
+    <span style="font-size:1.75rem;flex-shrink:0">${escHtml(g.icon || '📖')}</span>
+    <div>
+      <h2 style="font-size:1.05rem;font-weight:700;color:#0f172a;margin:0 0 0.25rem;line-height:1.4">${escHtml(g.title)}</h2>
+      <div style="font-size:0.75rem;color:#64748b">${g.read_mins || 8} دقائق قراءة${author ? ` · ${escHtml(author.name)}` : ''}</div>
+    </div>
+  </div>
+  <p style="font-size:0.9rem;color:#475569;line-height:1.7;margin:0.5rem 0 0">${escHtml((g.description || '').slice(0, 200))}</p>
+</a>`;
+  }).join('\n');
+
+  const itemListLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'الأدلة والمقالات في قناوي',
+    numberOfItems: allGuides.length,
+    itemListElement: allGuides.map((g, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `${BASE}/guides/${g.slug}`,
+      name: g.title,
+    })),
+  };
+
+  const bodyHtml = `
+<div dir="rtl" lang="ar" style="font-family:Cairo,Tajawal,sans-serif;padding:1.25rem;max-width:1100px;margin:0 auto">
+  <nav aria-label="breadcrumb" style="font-size:0.85rem;color:#64748b;margin-bottom:0.75rem">
+    <a href="/" style="color:#0c4a6e">الرئيسية</a> › <span>الأدلة والمقالات</span>
+  </nav>
+  <h1 style="font-size:2rem;font-weight:900;color:#0f172a;margin:0 0 0.5rem">الأدلة والمقالات</h1>
+  <p style="font-size:1.05rem;line-height:1.95;color:#475569;margin:0 0 1.5rem">
+    ${allGuides.length} مقالاً أصلياً معمّقاً عن محافظة قنا — مكتوبة بعناية ومراجعة من فريق قناوي. تغطي التاريخ، الاقتصاد، التعليم، السياحة، الموالد، التراث، والمواصلات. كل مقال يحمل اسم كاتبه ومراجعه وتاريخ آخر تحديث.
+  </p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.85rem">${cardsHtml}</div>
+</div>`;
+
+  const ldHtml = `<script type="application/ld+json">${JSON.stringify(itemListLd)}</script>`;
+  return { bodyHtml, ldHtml };
+}
+
+function teamPageBodySsr() {
+  const membersHtml = TEAM.members.map((m) => `
+<div style="padding:1.25rem;border:1px solid #e2e8f0;border-radius:0.75rem;background:#fff">
+  <div style="font-weight:800;color:#0f172a;font-size:1.05rem;margin-bottom:0.25rem">${escHtml(m.name)}</div>
+  <div style="color:#${(m.role_color || '0c4a6e').replace(/^#/, '')};font-weight:600;font-size:0.95rem;margin-bottom:0.75rem">${escHtml(m.role)}</div>
+  <p style="line-height:1.85;color:#475569;font-size:0.95rem;margin:0 0 0.75rem">${escHtml(m.bio)}</p>
+  <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
+    ${(m.expertise_areas || []).map((e) => `<span style="background:#f1f5f9;color:#475569;padding:0.25rem 0.6rem;border-radius:9999px;font-size:0.75rem">${escHtml(e)}</span>`).join('')}
+  </div>
+</div>`).join('\n');
+
+  const principlesHtml = (TEAM.editorial_principles || []).map((p) => `<li style="margin:0.4rem 0;line-height:1.85">${escHtml(p)}</li>`).join('');
+
+  const bodyHtml = `
+<div dir="rtl" lang="ar" style="font-family:Cairo,Tajawal,sans-serif;padding:1.25rem;max-width:1100px;margin:0 auto">
+  <nav aria-label="breadcrumb" style="font-size:0.85rem;color:#64748b;margin-bottom:0.75rem">
+    <a href="/" style="color:#0c4a6e">الرئيسية</a> › <span>الفريق</span>
+  </nav>
+  <h1 style="font-size:2rem;font-weight:900;color:#0f172a;margin:0 0 0.75rem">فريق قناوي</h1>
+  <p style="font-size:1.05rem;line-height:1.95;color:#475569;margin:0 0 1.75rem;padding-bottom:1rem;border-bottom:1px solid #e2e8f0">${escHtml(TEAM.intro)}</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-bottom:2rem">${membersHtml}</div>
+  <h2 style="font-size:1.4rem;font-weight:800;color:#0f172a;margin:2rem 0 0.75rem">مبادئنا التحريرية</h2>
+  <ul style="margin:0;padding-right:1.5rem;color:#334155">${principlesHtml}</ul>
+</div>`;
+  return { bodyHtml, ldHtml: '' };
+}
+
+function authorPageBodySsr(slug) {
+  const a = AUTHORS[slug];
+  if (!a) return null;
+
+  // Find articles authored by this person
+  const newArticlesByAuthor = Object.entries(NEW_ARTICLES)
+    .filter(([s, art]) => art.author === slug || art.reviewed_by === slug)
+    .map(([s, art]) => ({ slug: s, title: art.title, role: art.author === slug ? 'كاتب' : 'مراجع' }));
+  const existingByAuthor = Object.entries(EXISTING_GUIDE_OUTLINES)
+    .filter(([s, g]) => g.author === slug || g.reviewed_by === slug)
+    .map(([s, g]) => ({ slug: s, title: g.title, role: g.author === slug ? 'كاتب' : 'مراجع' }));
+  const allArticles = [...newArticlesByAuthor, ...existingByAuthor];
+
+  const personLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: a.name,
+    jobTitle: a.role,
+    url: `${BASE}/author/${slug}`,
+    description: a.bio,
+    knowsAbout: a.expertise || [],
+    worksFor: { '@type': 'Organization', name: 'قناوي', url: BASE },
+  };
+
+  const articlesHtml = allArticles.length ? `
+<h2 style="font-size:1.4rem;font-weight:800;color:#0f172a;margin:1.75rem 0 0.75rem">مقالات بقلم ${escHtml(a.name)}</h2>
+<ul style="list-style:none;padding:0;margin:0;display:grid;gap:0.5rem">
+  ${allArticles.map((art) => `<li>
+    <a href="/guides/${escAttr(art.slug)}" style="display:flex;justify-content:space-between;align-items:center;padding:0.85rem 1rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:0.5rem;text-decoration:none;color:inherit">
+      <span style="color:#0f172a;font-weight:600">${escHtml(art.title)}</span>
+      <span style="font-size:0.75rem;color:#64748b;background:#e0f2fe;color:#075985;padding:0.2rem 0.6rem;border-radius:9999px">${art.role}</span>
+    </a>
+  </li>`).join('')}
+</ul>` : '';
+
+  const bodyHtml = `
+<div dir="rtl" lang="ar" style="font-family:Cairo,Tajawal,sans-serif;padding:1.25rem;max-width:780px;margin:0 auto">
+  <nav aria-label="breadcrumb" style="font-size:0.85rem;color:#64748b;margin-bottom:0.75rem">
+    <a href="/" style="color:#0c4a6e">الرئيسية</a> ›
+    <a href="/team" style="color:#0c4a6e">الفريق</a> ›
+    <span>${escHtml(a.name)}</span>
+  </nav>
+  <div style="display:flex;gap:1.25rem;align-items:flex-start;padding:1.25rem;background:#f8fafc;border-radius:0.75rem;margin-bottom:1.5rem">
+    <div style="font-size:3.5rem;line-height:1;flex-shrink:0">${escHtml(a.icon || '👤')}</div>
+    <div>
+      <h1 style="font-size:1.6rem;font-weight:900;color:#0f172a;margin:0 0 0.25rem">${escHtml(a.name)}</h1>
+      <div style="color:#0c4a6e;font-weight:600;margin-bottom:0.75rem">${escHtml(a.role)}</div>
+      <p style="line-height:1.95;color:#334155;margin:0">${escHtml(a.bio)}</p>
+    </div>
+  </div>
+  <h2 style="font-size:1.25rem;font-weight:800;color:#0f172a;margin:1.25rem 0 0.5rem">مجالات الخبرة</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1rem">
+    ${(a.expertise || []).map((e) => `<span style="background:#e0f2fe;color:#075985;padding:0.35rem 0.85rem;border-radius:9999px;font-size:0.85rem">${escHtml(e)}</span>`).join('')}
+  </div>
+  ${articlesHtml}
+</div>`;
+
+  const ldHtml = `<script type="application/ld+json">${JSON.stringify(personLd)}</script>`;
+  return { bodyHtml, ldHtml };
+}
+
+function editorialPolicyBodySsr() {
+  const intro = EDITORIAL_POLICY.intro || '';
+  const sectionsHtml = (EDITORIAL_POLICY.sections || []).map((s) => `
+<h2 style="font-size:1.4rem;font-weight:800;color:#0f172a;margin:1.75rem 0 0.75rem">${escHtml(s.h2)}</h2>
+${(s.paragraphs || []).map((p) => `<p style="line-height:1.95;color:#334155;margin:0 0 0.85rem">${escHtml(p)}</p>`).join('')}
+${(s.bullets && s.bullets.length) ? `<ul style="margin:0 0 1rem;padding-right:1.5rem;color:#334155;line-height:1.95">${s.bullets.map((b) => `<li style="margin:0.3rem 0">${escHtml(b)}</li>`).join('')}</ul>` : ''}
+`).join('\n');
+
+  const bodyHtml = `
+<div dir="rtl" lang="ar" style="font-family:Cairo,Tajawal,sans-serif;padding:1.25rem;max-width:850px;margin:0 auto">
+  <nav aria-label="breadcrumb" style="font-size:0.85rem;color:#64748b;margin-bottom:0.75rem">
+    <a href="/" style="color:#0c4a6e">الرئيسية</a> › <span>السياسة التحريرية</span>
+  </nav>
+  <h1 style="font-size:2rem;font-weight:900;color:#0f172a;margin:0 0 0.75rem">السياسة التحريرية لقناوي</h1>
+  <p style="font-size:1.05rem;line-height:1.95;color:#475569;margin:0 0 1.5rem;padding-bottom:1rem;border-bottom:1px solid #e2e8f0">${escHtml(intro)}</p>
+  ${sectionsHtml}
+</div>`;
+  return { bodyHtml, ldHtml: '' };
+}
+
 // Resolve route metadata and (optionally) per-route body content. Returns
 // { meta, found, body, ld, ogImage }. `found: false` means the URL doesn't
 // match any known SPA route (or the DB row was missing) and the caller
@@ -688,12 +1256,69 @@ async function metaFor(reqPath) {
   if (p.length > 1) p = p.replace(/\/+$/, '');
   if (!p) p = '/';
 
-  if (STATIC_META[p]) return { meta: STATIC_META[p], found: true };
-
   // /admin and subpaths — known SPA routes, but excluded from indexing.
   if (p === '/admin' || p.startsWith('/admin/')) {
     return { meta: STATIC_META['/'], found: true, noindex: true };
   }
+
+  // Static pages with editorial body content (Home, About, Qena, Privacy,
+  // Terms, Contact). Each gets a rich SSR body so crawlers see real content.
+  if (STATIC_PAGES_CONTENT[p]) {
+    const meta = STATIC_META[p] || { title: STATIC_PAGES_CONTENT[p].title, description: STATIC_PAGES_CONTENT[p].description };
+    const rendered = staticPageBodySsr(p, meta);
+    return { meta, found: true, body: rendered.bodyHtml, ld: rendered.ldHtml };
+  }
+
+  // Guides index
+  if (p === '/guides') {
+    const rendered = guidesIndexBodySsr();
+    return { meta: STATIC_META['/guides'], found: true, body: rendered.bodyHtml, ld: rendered.ldHtml };
+  }
+
+  // Individual guide article (both new and existing)
+  let gm = p.match(/^\/guides\/([a-z0-9-]+)$/i);
+  if (gm) {
+    const rendered = guideArticleBodySsr(gm[1]);
+    if (rendered) {
+      const meta = STATIC_META[p] || (() => {
+        const data = NEW_ARTICLES[gm[1]] || EXISTING_GUIDE_OUTLINES[gm[1]];
+        return { title: data.title, description: data.description };
+      })();
+      return { meta, found: true, body: rendered.bodyHtml, ld: rendered.ldHtml };
+    }
+    // Unknown guide slug → 404 + noindex
+    return { meta: STATIC_META['/'], found: false };
+  }
+
+  // Team page
+  if (p === '/team') {
+    const rendered = teamPageBodySsr();
+    return { meta: STATIC_META['/team'], found: true, body: rendered.bodyHtml, ld: rendered.ldHtml };
+  }
+
+  // Editorial policy
+  if (p === '/editorial-policy') {
+    const rendered = editorialPolicyBodySsr();
+    return { meta: STATIC_META['/editorial-policy'], found: true, body: rendered.bodyHtml, ld: rendered.ldHtml };
+  }
+
+  // Author bio pages
+  let am = p.match(/^\/author\/([a-z0-9-]+)$/i);
+  if (am) {
+    const rendered = authorPageBodySsr(am[1]);
+    if (rendered) {
+      const meta = STATIC_META[p] || (() => {
+        const a = AUTHORS[am[1]];
+        return { title: `${a.name} — ${a.role} | كتّاب قناوي`, description: a.bio.slice(0, 200) };
+      })();
+      return { meta, found: true, body: rendered.bodyHtml, ld: rendered.ldHtml };
+    }
+    return { meta: STATIC_META['/'], found: false };
+  }
+
+  // Fall through to STATIC_META lookup for non-content static pages
+  // (/numbers, /submit, /nearby, /category/all, etc.)
+  if (STATIC_META[p]) return { meta: STATIC_META[p], found: true };
 
   let m = p.match(/^\/category\/([a-z0-9-]+)$/i);
   if (m) {

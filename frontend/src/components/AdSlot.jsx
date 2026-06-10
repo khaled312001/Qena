@@ -1,29 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 
-// Non-intrusive AdSense slot.
-// Behaviour:
-//  - If publisher ID + slot ID are missing → renders nothing (zero impact on UX).
-//  - If they are set → loads AdSense once per slot and shows the ad.
-//  - Never popups, never overlays. Renders inline between content sections.
-//  - Admin-controlled content filters are configured in the AdSense dashboard
-//    (enable "Restricted categories" for sexually suggestive, gambling, alcohol, etc).
+// Non-intrusive AdSense slot — gated behind explicit opt-in.
+// CRITICAL: until VITE_ADS_ENABLED=true is set at build time, the component
+// renders NOTHING and the AdSense script is NEVER loaded. This is on purpose:
+// AdSense reviewers reject sites that serve live ad code during review.
 //
-// Enable by setting in frontend/.env.production:
+// Configure at frontend/.env.production AFTER AdSense approval:
+//   VITE_ADS_ENABLED=true
 //   VITE_ADSENSE_CLIENT=ca-pub-XXXXXXXXXXXXXXXX
 //   VITE_ADSENSE_SLOT_INLINE=0000000000
 //   VITE_ADSENSE_SLOT_INFEED=1111111111
+//   VITE_ADSENSE_SLOT_SIDEBAR=2222222222
 
-const DEFAULT_ADSENSE_CLIENT = 'ca-pub-3653156634481888';
-const DEFAULT_INLINE_SLOT = '6375995832';
+const ADS_ENABLED = String(import.meta.env.VITE_ADS_ENABLED || '').toLowerCase() === 'true';
+const CLIENT = import.meta.env.VITE_ADSENSE_CLIENT || '';
 const ADSENSE_SCRIPT_SRC = 'pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
-
-// Fall back to the live site ad unit so production builds still render ads
-// even when the server is missing frontend/.env.production.
-const CLIENT = import.meta.env.VITE_ADSENSE_CLIENT || DEFAULT_ADSENSE_CLIENT;
 
 let scriptLoaded = false;
 function loadAdsenseScript() {
-  if (scriptLoaded || !CLIENT) return;
+  if (!ADS_ENABLED || scriptLoaded || !CLIENT) return;
   if (typeof document === 'undefined') return;
   if (document.querySelector(`script[src*="${ADSENSE_SCRIPT_SRC}"]`)) { scriptLoaded = true; return; }
   const s = document.createElement('script');
@@ -45,7 +40,7 @@ export default function AdSlot({ slot, format = 'auto', responsive = true, class
       : format;
 
   useEffect(() => {
-    if (!CLIENT || !slot) return;
+    if (!ADS_ENABLED || !CLIENT || !slot) return;
     loadAdsenseScript();
     if (pushedRef.current) return;
     try {
@@ -56,7 +51,7 @@ export default function AdSlot({ slot, format = 'auto', responsive = true, class
   }, [slot]);
 
   useEffect(() => {
-    if (!insRef.current || typeof MutationObserver === 'undefined') return undefined;
+    if (!ADS_ENABLED || !insRef.current || typeof MutationObserver === 'undefined') return undefined;
     const ins = insRef.current;
     const syncStatus = () => {
       const next = ins.getAttribute('data-ad-status');
@@ -74,8 +69,10 @@ export default function AdSlot({ slot, format = 'auto', responsive = true, class
     return () => observer.disconnect();
   }, [slot]);
 
-  // If not configured, render nothing — no clutter, no placeholder box.
-  if (!CLIENT || !slot) return null;
+  // Until AdSense approves and VITE_ADS_ENABLED=true is flipped at build
+  // time, render absolutely nothing. No clutter, no placeholder, no
+  // adsbygoogle.push call, no script tag — clean as the day the site shipped.
+  if (!ADS_ENABLED || !CLIENT || !slot) return null;
   if (adStatus === 'unfilled' || adStatus === 'unfill-optimized') return null;
 
   return (
@@ -101,6 +98,6 @@ export default function AdSlot({ slot, format = 'auto', responsive = true, class
 }
 
 // Convenience slot IDs (read from env at build time)
-AdSlot.INLINE = import.meta.env.VITE_ADSENSE_SLOT_INLINE || DEFAULT_INLINE_SLOT;
+AdSlot.INLINE = import.meta.env.VITE_ADSENSE_SLOT_INLINE || '';
 AdSlot.INFEED = import.meta.env.VITE_ADSENSE_SLOT_INFEED || '';
 AdSlot.SIDEBAR = import.meta.env.VITE_ADSENSE_SLOT_SIDEBAR || '';

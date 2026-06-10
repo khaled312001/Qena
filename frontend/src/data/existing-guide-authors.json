@@ -1,0 +1,14 @@
+{
+  "hospitals-qena":         { "author": "khaled-ahmed",      "reviewed_by": "qena-correspondent" },
+  "pharmacies-24h-qena":    { "author": "khaled-ahmed",      "reviewed_by": "qena-correspondent" },
+  "dendera-temple-guide":   { "author": "qena-historian",    "reviewed_by": "khaled-ahmed" },
+  "qena-to-cairo-transport":{ "author": "khaled-ahmed",      "reviewed_by": "qena-correspondent" },
+  "restaurants-qena":       { "author": "qena-correspondent","reviewed_by": "khaled-ahmed" },
+  "hotels-qena":            { "author": "ahmed-kamal",       "reviewed_by": "qena-correspondent" },
+  "banks-atm-qena":         { "author": "khaled-ahmed",      "reviewed_by": "ahmed-kamal" },
+  "qena-landmarks":         { "author": "qena-historian",    "reviewed_by": "qena-correspondent" },
+  "qena-emergency-numbers": { "author": "khaled-ahmed",      "reviewed_by": "qena-historian" },
+  "qena-history":           { "author": "qena-historian",    "reviewed_by": "khaled-ahmed" },
+  "qena-education":         { "author": "khaled-ahmed",      "reviewed_by": "ahmed-kamal" },
+  "qena-economy":           { "author": "ahmed-kamal",       "reviewed_by": "qena-historian" }
+}

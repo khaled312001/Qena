@@ -13,4 +13,18 @@ User-agent: Bingbot
 Allow: /
 Disallow: /admin
 
+# AdSense quality crawlers: block them from sampling the noindex'd
+# directory listings. /service/:id pages are reachable from /category/*
+# for users, but AdSense's content-quality scoring should ONLY evaluate
+# our editorial pages (homepage, /guides/*, /about, /qena, /authors/*,
+# category landing pages).
+User-agent: Mediapartners-Google
+Disallow: /service/
+
+User-agent: AdsBot-Google
+Disallow: /service/
+
+User-agent: AdsBot-Google-Mobile
+Disallow: /service/
+
 Sitemap: https://qinawy.com/sitemap.xml

@@ -17,9 +17,10 @@
     <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1" />
     <meta name="googlebot" content="index,follow" />
 
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3653156634481888"
-         crossorigin="anonymous"></script>
+    <!-- Google AdSense: meta-tag verification only (no script). The actual
+         adsbygoogle script is loaded conditionally by AdSlot.jsx ONLY when
+         VITE_ADS_ENABLED=true at build time — so reviewers see clean pages
+         during application, and the script runs only after approval. -->
     <meta name="google-adsense-account" content="ca-pub-3653156634481888" />
     <!-- Google Funding Choices -->
     <script async src="https://fundingchoicesmessages.google.com/i/pub-3653156634481888?ers=1"></script><script>(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width: 0; height: 0; border: none; z-index: -1000; left: -1000px; top: -1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}}signalGooglefcPresent();})();</script>

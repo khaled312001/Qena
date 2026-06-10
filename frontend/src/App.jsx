@@ -27,6 +27,10 @@ import EmergencyNumbersGuide from './pages/guides/EmergencyNumbersGuide.jsx';
 import QenaHistoryGuide from './pages/guides/QenaHistoryGuide.jsx';
 import QenaEducationGuide from './pages/guides/QenaEducationGuide.jsx';
 import QenaEconomyGuide from './pages/guides/QenaEconomyGuide.jsx';
+import ArticleViewer from './pages/guides/ArticleViewer.jsx';
+import Team from './pages/Team.jsx';
+import Author from './pages/Author.jsx';
+import EditorialPolicy from './pages/EditorialPolicy.jsx';
 import NotFound from './pages/NotFound.jsx';
 import AdminLogin from './pages/admin/AdminLogin.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
@@ -65,6 +69,15 @@ export default function App() {
         <Route path="/guides/qena-history" element={<QenaHistoryGuide />} />
         <Route path="/guides/qena-education" element={<QenaEducationGuide />} />
         <Route path="/guides/qena-economy" element={<QenaEconomyGuide />} />
+        {/* Generic viewer for the 7 new long-form articles whose content
+            lives in frontend/src/data/articles.json. ArticleViewer reads
+            the slug from useParams and renders from JSON — same source the
+            backend SSR uses. */}
+        <Route path="/guides/:slug" element={<ArticleViewer />} />
+        {/* E-E-A-T trust pages */}
+        <Route path="/team" element={<Team />} />
+        <Route path="/author/:slug" element={<Author />} />
+        <Route path="/editorial-policy" element={<EditorialPolicy />} />
         <Route path="*" element={<NotFound />} />
       </Route>
 

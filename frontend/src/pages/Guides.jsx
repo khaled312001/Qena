@@ -1,11 +1,15 @@
 import { Link } from 'react-router-dom';
-import { BookOpen, ChevronLeft, Clock } from 'lucide-react';
+import { BookOpen, ChevronLeft, Clock, User } from 'lucide-react';
 import SEO from '../components/SEO.jsx';
+import NEW_ARTICLES from '../data/articles.json';
+import AUTHORS from '../data/authors.json';
 
 // Hub page for long-form Arabic content. AdSense reviewers and Google both
 // score sites higher when there's editorial content alongside the directory
-// data. Each guide lives at /guides/:slug and is plain hand-written prose.
-const GUIDES = [
+// data. Each guide lives at /guides/:slug.
+// EXISTING_GUIDES are the 12 hand-coded ones; NEW_ARTICLES are 7 generated
+// via Workflow and rendered by ArticleViewer from frontend/src/data/articles.json.
+const EXISTING_GUIDES = [
   {
     slug: 'hospitals-qena',
     title: 'دليل أفضل مستشفيات قنا 2026 — حكومية وخاصة',
@@ -104,6 +108,15 @@ const GUIDES = [
   },
 ];
 
+// Build the combined list: 7 new articles (from JSON) + 12 existing (above).
+// New articles are tagged isNew=true so the UI can highlight them.
+const NEW_FROM_DATA = Object.entries(NEW_ARTICLES).map(([slug, a]) => ({
+  slug, title: a.title, excerpt: a.description, readMins: a.read_mins,
+  icon: a.icon, color: a.color, author: a.author, isNew: true,
+}));
+
+const GUIDES = [...NEW_FROM_DATA, ...EXISTING_GUIDES];
+
 export default function Guides() {
   return (
     <div>
@@ -127,28 +140,41 @@ export default function Guides() {
 
       <section className="container-p py-10">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {GUIDES.map((g) => (
-            <Link key={g.slug} to={`/guides/${g.slug}`}
-                  className="card p-5 hover:ring-2 hover:ring-brand-300 transition group block">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="text-3xl shrink-0" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.1))' }}>
-                  {g.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="font-bold text-slate-900 leading-snug group-hover:text-brand-700 transition">
-                    {g.title}
-                  </h2>
-                  <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-1">
-                    <Clock className="w-3 h-3" /> {g.readMins} دقائق قراءة
+          {GUIDES.map((g) => {
+            const author = g.author ? AUTHORS[g.author] : null;
+            return (
+              <Link key={g.slug} to={`/guides/${g.slug}`}
+                    className="card p-5 hover:ring-2 hover:ring-brand-300 transition group block">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="text-3xl shrink-0" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.1))' }}>
+                    {g.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {g.isNew && (
+                      <span className="inline-block text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full mb-1">
+                        جديد
+                      </span>
+                    )}
+                    <h2 className="font-bold text-slate-900 leading-snug group-hover:text-brand-700 transition">
+                      {g.title}
+                    </h2>
+                    <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-1 flex-wrap">
+                      <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" /> {g.readMins} دقائق</span>
+                      {author && (
+                        <span className="inline-flex items-center gap-1">
+                          <User className="w-3 h-3" /> {author.name}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <p className="text-sm text-slate-600 leading-7 line-clamp-3 mb-3">{g.excerpt}</p>
-              <div className="text-brand-700 text-sm font-semibold inline-flex items-center gap-1 group-hover:gap-2 transition-all">
-                اقرأ المقال <ChevronLeft className="w-4 h-4" />
-              </div>
-            </Link>
-          ))}
+                <p className="text-sm text-slate-600 leading-7 line-clamp-3 mb-3">{g.excerpt}</p>
+                <div className="text-brand-700 text-sm font-semibold inline-flex items-center gap-1 group-hover:gap-2 transition-all">
+                  اقرأ المقال <ChevronLeft className="w-4 h-4" />
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
     </div>

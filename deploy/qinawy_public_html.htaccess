@@ -22,11 +22,20 @@ RewriteEngine On
 #   http://qinawy.com/x       → https://qinawy.com/x
 #   http://www.qinawy.com/x   → https://qinawy.com/x   (was 2 hops)
 #   https://www.qinawy.com/x  → https://qinawy.com/x
-# The TLS cert covers both hosts. Collapsing chains keeps Google from
-# treating intermediate URLs (www, http) as distinct pages it has to drop.
+# The TLS cert covers both hosts. The E=REDIR:1 flag tags the response so
+# the Header directives below can add long-lived caching — telling Googlebot
+# and other crawlers "this redirect is permanent, don't keep re-checking it".
 RewriteCond %{HTTPS} off [OR]
 RewriteCond %{HTTP_HOST} ^www\.qinawy\.com$ [NC]
-RewriteRule ^(.*)$ https://qinawy.com/$1 [R=301,L]
+RewriteRule ^(.*)$ https://qinawy.com/$1 [R=301,L,E=REDIR:1]
+
+<IfModule mod_headers.c>
+  # Aggressive caching for 301 redirects. The redirect target never changes,
+  # so a 1-year max-age tells crawlers (Google included) to stop re-validating
+  # these URLs as "Page with redirect" findings. They become silent once
+  # cached and eventually fall off GSC's active reports.
+  Header always set Cache-Control "public, max-age=31536000, immutable" env=REDIR
+</IfModule>
 
 # Hostinger's internal build folder — never expose it
 RewriteRule ^\.builds - [F,L]

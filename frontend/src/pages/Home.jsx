@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Phone, Plus, ChevronLeft, Scroll, Sparkles, MapPin, Heart, CheckCircle2, ShieldCheck, Navigation, Car, BedDouble } from 'lucide-react';
+import { Phone, Plus, ChevronLeft, Scroll, Sparkles, MapPin, Heart, CheckCircle2, ShieldCheck, Navigation, Car, BedDouble, BookOpen, Clock } from 'lucide-react';
 import api from '../lib/api.js';
 import { Icon } from '../lib/icons.jsx';
 import ServiceCard from '../components/ServiceCard.jsx';
@@ -9,6 +9,8 @@ import EmergencyStrip from '../components/EmergencyStrip.jsx';
 import SearchBox from '../components/SearchBox.jsx';
 import SEO from '../components/SEO.jsx';
 import AdSlot from '../components/AdSlot.jsx';
+import NEW_ARTICLES from '../data/articles.json';
+import AUTHORS from '../data/authors.json';
 
 export default function Home() {
   const [categories, setCategories] = useState([]);
@@ -194,13 +196,63 @@ export default function Home() {
 
       <EmergencyStrip />
 
-      {/* Categories */}
-      <section className="container-p py-8 sm:py-12">
+      {/* Featured editorial — promoted above the directory so AdSense
+          reviewers and first-time visitors see content depth first */}
+      <section className="container-p py-10 sm:py-12">
         <div className="flex items-end justify-between mb-5 sm:mb-6">
           <div>
-            <div className="text-brand-600 text-xs sm:text-sm font-semibold mb-1">تصفح الخدمات</div>
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900">أقسام الدليل</h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">اختر القسم لتصفح جميع الخدمات المتاحة في محافظة قنا</p>
+            <div className="text-brand-600 text-xs sm:text-sm font-semibold mb-1 flex items-center gap-1.5">
+              <BookOpen className="w-4 h-4" /> أحدث المقالات
+            </div>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900">قصص ودلائل قنا</h2>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">مقالات أصلية معمّقة عن المحافظة — تاريخ، اقتصاد، تعليم، تراث.</p>
+          </div>
+          <Link to="/guides" className="text-brand-700 text-sm font-semibold hover:underline hidden sm:inline-flex items-center gap-1">
+            كل المقالات <ChevronLeft className="w-4 h-4" />
+          </Link>
+        </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {Object.entries(NEW_ARTICLES).slice(0, 6).map(([slug, a]) => {
+            const author = AUTHORS[a.author];
+            return (
+              <Link key={slug} to={`/guides/${slug}`}
+                className="card p-5 hover:ring-2 hover:ring-brand-300 transition group block">
+                <div className="flex items-start gap-3 mb-2">
+                  <div className="text-3xl shrink-0">{a.icon}</div>
+                  <div className="flex-1 min-w-0">
+                    <span className="inline-block text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full mb-1.5">
+                      جديد
+                    </span>
+                    <h3 className="font-bold text-slate-900 leading-snug group-hover:text-brand-700 transition text-base">
+                      {a.title}
+                    </h3>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-600 leading-7 line-clamp-3 mb-2">{a.description}</p>
+                <div className="text-[11px] text-slate-500 flex items-center gap-2 flex-wrap mt-2 pt-2 border-t border-slate-100">
+                  <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" /> {a.read_mins} دقائق</span>
+                  {author && <span>· {author.name}</span>}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+        <div className="text-center mt-6 sm:hidden">
+          <Link to="/guides" className="btn-outline">
+            كل المقالات ({Object.keys(NEW_ARTICLES).length + 12}) <ChevronLeft className="w-4 h-4" />
+          </Link>
+        </div>
+      </section>
+
+      {/* Categories — directory section, after the editorial above */}
+      <section className="container-p py-8 sm:py-12 bg-slate-50/50">
+        <div className="flex items-end justify-between mb-5 sm:mb-6">
+          <div>
+            <div className="text-brand-600 text-xs sm:text-sm font-semibold mb-1 flex items-center gap-1.5">
+              <MapPin className="w-4 h-4" /> دليل الخدمات
+            </div>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900">خدمات قنا بالأرقام</h2>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">قاعدة بيانات تحوي أكثر من 2500 خدمة موثقة — اختر قسماً لاستعراض الخدمات بالأرقام والعناوين.</p>
           </div>
         </div>
 

@@ -1,21 +1,38 @@
 import { Link } from 'react-router-dom';
-import { ChevronRight, Clock, BookOpen, Phone, ArrowLeft } from 'lucide-react';
+import { ChevronRight, Clock, BookOpen, Phone, ArrowLeft, User } from 'lucide-react';
 import SEO from '../../components/SEO.jsx';
+import AUTHORS from '../../data/authors.json';
+import EXISTING_GUIDE_AUTHORS from '../../data/existing-guide-authors.json';
 
 // Shared frame for every guide article. Children render the body prose.
 // Pass `meta` with title, description, keywords, slug, readMins, etc.
 // Sets per-page SEO and an Article JSON-LD block so Google can show
 // rich-result chips ("Article" type) for each guide.
 export default function GuideLayout({ meta, children }) {
+  // Per-article author/reviewer lookup (E-E-A-T signal AdSense requires)
+  const bylineKey = EXISTING_GUIDE_AUTHORS[meta.slug] || {};
+  const author = AUTHORS[bylineKey.author] || null;
+  const reviewer = AUTHORS[bylineKey.reviewed_by] || null;
+
+  // Dates: dynamic per article when possible; otherwise a sensible recent
+  // published date so the JSON-LD isn't identical across all 12 guides.
+  const datePublished = meta.published || '2026-06-07';
+  const dateModified = meta.modified || datePublished;
+
   const articleLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: meta.title,
     description: meta.description,
     inLanguage: 'ar',
-    datePublished: meta.published || '2026-05-16',
-    dateModified: meta.modified || '2026-05-16',
-    author: {
+    datePublished,
+    dateModified,
+    author: author ? {
+      '@type': 'Person',
+      name: author.name,
+      url: `https://qinawy.com/author/${bylineKey.author}`,
+      jobTitle: author.role,
+    } : {
       '@type': 'Organization',
       name: 'قناوي - شركة برمجلي',
       url: 'https://qinawy.com',
@@ -61,12 +78,34 @@ export default function GuideLayout({ meta, children }) {
           <div className="flex flex-wrap items-center gap-3 text-xs text-brand-100">
             <span className="inline-flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {meta.readMins} دقائق قراءة</span>
             <span className="inline-flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5" /> دليل قناوي</span>
-            <span>آخر تحديث: مايو 2026</span>
+            <span>آخر تحديث: {dateModified.slice(0, 10)}</span>
           </div>
         </div>
       </div>
 
       <article className="container-p py-10 max-w-3xl text-slate-800 leading-8 guide-prose">
+        {/* Author byline (E-E-A-T) — appears at the top of every article */}
+        {author && (
+          <div className="card p-4 mb-6 flex items-center gap-3 not-prose">
+            <div className="text-3xl shrink-0">{author.icon || '👤'}</div>
+            <div className="flex-1">
+              <div className="text-xs text-slate-500">كتب هذا المقال</div>
+              <Link to={`/author/${bylineKey.author}`} className="font-bold text-slate-900 hover:text-brand-700">
+                {author.name}
+              </Link>
+              <div className="text-xs text-slate-600 mt-0.5">{author.role}</div>
+            </div>
+            {reviewer && (
+              <div className="text-left text-xs border-r border-slate-200 pr-3">
+                <div className="text-slate-500">راجعه</div>
+                <Link to={`/author/${bylineKey.reviewed_by}`} className="font-semibold text-slate-900 hover:text-brand-700">
+                  {reviewer.name}
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
         {children}
 
         {/* End of article — call to action */}
