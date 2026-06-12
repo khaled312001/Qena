@@ -709,14 +709,22 @@ function hasRealAddress(addr) {
 
 function hasRealImage(url) {
   if (!url) return false;
-  const lower = String(url).toLowerCase();
-  // Skip Unsplash category fallbacks AND third-party hotlinks from random domains
-  // (we want services with images we actually serve or which point to a verified domain).
+  const lower = String(url).toLowerCase().trim();
+  if (lower.length === 0) return false;
   if (lower.includes('unsplash.com')) return false;
-  // Allow images from our own domain or its API path
-  if (lower.startsWith('/') || lower.includes('qinawy.com') || lower.includes('/uploads/')) return true;
-  // External images are sometimes hotlinks to random sites — treat as "not rich" signal
-  return false;
+  // Relative URL (served from our backend uploads endpoint) — always real.
+  if (lower.startsWith('/')) return true;
+  // Absolute URL: only count it as "real" if hosted on qinawy.com. Random
+  // third-party hotlinks (e.g. https://dezone.net/wp-content/uploads/...,
+  // https://clinido.com/storage/...) are NOT a quality signal — they often
+  // 404 over time, and Google's classifier doesn't credit them.
+  try {
+    const parsed = new URL(lower);
+    const h = parsed.hostname;
+    return h === 'qinawy.com' || h.endsWith('.qinawy.com');
+  } catch (_) {
+    return false; // not a valid URL
+  }
 }
 
 // Tags count as a signal only if they exist AND aren't just the same string
