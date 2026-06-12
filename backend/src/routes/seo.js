@@ -684,17 +684,26 @@ const TEMPLATED_DESC_RES = [
   /^\s*rating:?\s*\d/i,
 ];
 
+// Reject text that has Unicode replacement chars (U+FFFD) — sign of a broken
+// import (PDF scrape, mojibake re-decode). Such text adds no signal.
+function isCorrupted(s) {
+  if (!s) return false;
+  return /[�]/.test(String(s));
+}
+
 function hasRealDescription(desc) {
   if (!desc) return false;
-  const t = desc.trim();
+  const t = String(desc).trim();
   if (t.length < 40) return false;
+  if (isCorrupted(t)) return false;
   return !TEMPLATED_DESC_RES.some((re) => re.test(t));
 }
 
 function hasRealAddress(addr) {
   if (!addr) return false;
-  const t = addr.trim();
+  const t = String(addr).trim();
   if (t.length < 5) return false;
+  if (isCorrupted(t)) return false;
   return !PLUS_CODE_RE.test(t);
 }
 
@@ -710,23 +719,46 @@ function hasRealImage(url) {
   return false;
 }
 
+// Tags count as a signal only if they exist AND aren't just the same string
+// as the description (templated dup like desc="صيدلية" + tags="صيدلية" → not
+// a real signal) AND aren't corrupted.
+function hasRealTags(tags, desc) {
+  if (!tags) return false;
+  const t = String(tags).trim();
+  if (t.length === 0) return false;
+  if (isCorrupted(t)) return false;
+  if (desc && t === String(desc).trim()) return false;
+  return true;
+}
+
 // Returns true if the service has so little distinguishing content that it
-// should be marked noindex + excluded from sitemap. Goal: keep AdSense and
-// Google from seeing thousands of templated "name + phone" pages as our
-// primary content. Threshold of 3+ signals (raised from 2) — empirically
-// services with 2 weak signals (e.g. Plus Code address + 1 tag) still read
-// as thin to Google's quality scoring.
+// should be marked noindex + excluded from sitemap. Matches Google's actual
+// indexing behavior more closely: pages without ANY "quality" signal
+// (description / image / website) are not indexed by Google even when they
+// have phone + address — because those are basic contact-card facts every
+// pharmacy/hospital/restaurant has, not editorial differentiation.
 function isThinService(svc) {
-  const signals = [
+  // Quality signals — editorial / differentiating content that says
+  // something about THIS specific place beyond "it exists".
+  const quality = [
     hasRealDescription(svc.description),
-    !!svc.working_hours,
-    !!svc.website,
     hasRealImage(svc.image_url),
-    hasRealAddress(svc.address),
-    !!(svc.tags && svc.tags.trim().length > 0),
-    !!svc.phone,  // having a phone is a basic signal — adds 1 to the count
+    !!svc.website,
   ].filter(Boolean).length;
-  return signals < 3;
+
+  // Basic contact-info signals — present on every entry, but together
+  // they confirm the page is at least a complete contact card.
+  const basics = [
+    !!svc.working_hours,
+    hasRealAddress(svc.address),
+    hasRealTags(svc.tags, svc.description),
+    !!svc.phone,
+  ].filter(Boolean).length;
+
+  // Thin if: no quality signal at all, OR fewer than 2 basic signals.
+  // Matches GSC's actual "Crawled - currently not indexed" decisions on
+  // pages like /service/657 (no real desc, hotlinked image, no website).
+  return quality === 0 || basics < 2;
 }
 
 function serviceBodySsr(svc) {
