@@ -172,8 +172,41 @@ export default function ArticleViewer() {
           </div>
         )}
 
+        {/* About the Author — full bio card (E-E-A-T signal) */}
+        {author && (
+          <div className="mt-10 pt-8 border-t border-slate-200">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">عن كاتب هذا المقال</div>
+            <div className="card p-5 bg-gradient-to-bl from-brand-50/50 to-white border-brand-100">
+              <div className="flex items-start gap-4">
+                <div className="text-5xl shrink-0">{author.icon || '👤'}</div>
+                <div className="flex-1 min-w-0">
+                  <Link to={`/author/${article.author}`} className="font-extrabold text-slate-900 text-lg hover:text-brand-700 transition">
+                    {author.name}
+                  </Link>
+                  <div className="text-sm font-semibold mb-2" style={{ color: author.color || '#0c4a6e' }}>
+                    {author.role}
+                  </div>
+                  {author.bio && (
+                    <p className="text-sm text-slate-700 leading-7 mb-3">{author.bio}</p>
+                  )}
+                  {author.expertise && author.expertise.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {author.expertise.slice(0, 4).map((e, i) => (
+                        <span key={i} className="bg-sky-50 text-sky-800 text-[11px] px-2.5 py-0.5 rounded-full">{e}</span>
+                      ))}
+                    </div>
+                  )}
+                  <Link to={`/author/${article.author}`} className="text-brand-700 text-sm font-semibold hover:underline inline-flex items-center gap-1">
+                    كل مقالات {author.name} ←
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* End-of-article navigation */}
-        <div className="mt-10 pt-6 border-t border-slate-200">
+        <div className="mt-8 pt-6 border-t border-slate-200">
           <Link to="/guides" className="card p-4 hover:ring-2 hover:ring-brand-300 transition group flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center">
               <ArrowLeft className="w-5 h-5" />

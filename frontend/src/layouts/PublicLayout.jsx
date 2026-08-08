@@ -265,6 +265,20 @@ export default function PublicLayout() {
                 </Link>
               </li>
             </ul>
+            <div className="mt-6">
+              <div className="text-white font-semibold mb-2 text-xs">تابعنا</div>
+              <div className="flex gap-2">
+                <a href="https://www.facebook.com/people/%D9%82%D9%86%D8%A7%D9%88%D9%8A-Qinawy/61591702688179/"
+                   target="_blank" rel="noopener noreferrer"
+                   aria-label="قناوي على فيسبوك"
+                   className="inline-flex items-center gap-1.5 bg-[#1877F2] hover:bg-[#0e5fc0] transition text-white text-xs font-bold px-3 py-2 rounded-lg">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
+                  </svg>
+                  Facebook
+                </a>
+              </div>
+            </div>
           </div>
           <div>
             <div className="text-white font-semibold mb-3">مقدمة من</div>

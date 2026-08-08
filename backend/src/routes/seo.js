@@ -257,8 +257,15 @@ router.get('/sitemap.xml', async (_req, res) => {
   // Add DB-backed entries best-effort — fall back to the 8 static pages if
   // the DB is unreachable so Google Search Console stops getting 503s.
   try {
+    // Only include the 5 editorial-hub categories in the sitemap. Other
+    // categories are noindex + not sitemap-listed to further tilt the
+    // editorial:directory URL ratio in Google's favor (was 20:100, now 20:5).
+    const EDITORIAL_HUB_CATEGORIES = new Set([
+      'hospitals', 'pharmacies', 'tourism', 'restaurants', 'banks',
+    ]);
     const cats = await Category.findAll({ where: { is_active: true }, attributes: ['slug', 'updatedAt'] });
     for (const c of cats) {
+      if (!EDITORIAL_HUB_CATEGORIES.has(c.slug)) continue;
       const lm = (c.updatedAt || new Date()).toISOString().split('T')[0];
       urls.push(`<url><loc>${BASE}/category/${escAttr(c.slug)}</loc><lastmod>${lm}</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>`);
     }
@@ -1379,7 +1386,28 @@ async function metaFor(reqPath) {
       } catch (_) { /* keep empty list */ }
 
       const { bodyHtml, ldHtml } = categoryBodySsr(cat, services);
-      return { meta: metaForCategory(cat), found: true, body: bodyHtml, ld: ldHtml };
+
+      // Category noindex strategy: only the 5 categories that have a matching
+      // long-form guide article get indexed (they function as editorial hubs).
+      // All other categories become noindex to shift the editorial:directory
+      // ratio in Google's classifier from 20:100 → 20:5. Matches the AdSense
+      // audit finding that "editorial-to-directory ratio still upside down".
+      const EDITORIAL_HUB_CATEGORIES = new Set([
+        'hospitals',    // → /guides/hospitals-qena + /guides/hospitals-qena-2026
+        'pharmacies',   // → /guides/pharmacies-24h-qena
+        'tourism',      // → /guides/qena-landmarks + /guides/dendera-temple-guide
+        'restaurants',  // → /guides/restaurants-qena + /guides/koshari-qena
+        'banks',        // → /guides/banks-atm-qena
+      ]);
+      const isEditorialHub = EDITORIAL_HUB_CATEGORIES.has(cat.slug);
+
+      return {
+        meta: metaForCategory(cat),
+        found: true,
+        body: bodyHtml,
+        ld: ldHtml,
+        noindex: !isEditorialHub,
+      };
     } catch (_) {
       // DB unreachable — keep page indexable with generic meta + no body.
       return { meta: STATIC_META['/category/all'], found: true };
@@ -1416,10 +1444,13 @@ async function metaFor(reqPath) {
   return { meta: STATIC_META['/'], found: false };
 }
 
-async function renderForPath(reqPath, res) {
+async function renderForPath(reqPath, res, opts = {}) {
   try {
     const ctx = await metaFor(reqPath);
-    const { meta, found, noindex, body, ld, ogImage } = ctx;
+    let { meta, found, noindex, body, ld, ogImage } = ctx;
+    // Escalate noindex on any request that carries a query string (see
+    // spaCatchAll comment).
+    if (opts.forceNoindex) noindex = true;
     const canonical = found
       ? BASE + (reqPath === '/' ? '/' : reqPath.replace(/\/+$/, ''))
       : BASE + '/';
@@ -1498,7 +1529,14 @@ async function spaCatchAll(req, res, next) {
   // Skip API and admin paths (admin is a SPA route but blocked from indexing,
   // so we still serve it the homepage HTML — same as before).
   if (req.path.startsWith('/api/')) return next();
-  return renderForPath(req.path, res);
+  // Force noindex on any URL that carries a query string. Nothing on this
+  // site should be indexed with query params (there's no legitimate ?q= /
+  // ?utm= / ?ref= indexable variant). This kills the phantom
+  // /category/all?q={search_term_string} URL that got crawled literally
+  // from a stale SearchAction JSON-LD template — the source of dozens of
+  // "Alternate page with proper canonical tag" reports in GSC.
+  const hasQuery = req.originalUrl && req.originalUrl.includes('?');
+  return renderForPath(req.path, res, { forceNoindex: hasQuery });
 }
 
 module.exports = router;

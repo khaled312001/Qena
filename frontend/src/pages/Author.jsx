@@ -69,6 +69,31 @@ export default function Author() {
           ))}
         </div>
 
+        {author.verification_links && author.verification_links.length > 0 && (
+          <>
+            <h2 className="text-lg font-bold text-slate-900 mt-6 mb-3">روابط للتحقق</h2>
+            <div className="card p-4 mb-6">
+              <div className="text-xs text-slate-500 mb-3">
+                للتحقق من هوية الكاتب أو التواصل المباشر، استخدم الروابط التالية:
+              </div>
+              <div className="grid gap-2">
+                {author.verification_links.map((link, i) => (
+                  <a
+                    key={i}
+                    href={link.url}
+                    target={link.url.startsWith('http') ? '_blank' : undefined}
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-brand-700 hover:text-brand-800 font-semibold text-sm"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-brand-500"></span>
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
         {articles.length > 0 && (
           <>
             <h2 className="text-lg font-bold text-slate-900 mt-6 mb-3 flex items-center gap-2">

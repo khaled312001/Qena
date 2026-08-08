@@ -58,7 +58,7 @@ export default function Contact() {
         </div>
       </div>
 
-      <section className="container-p py-10 grid md:grid-cols-3 gap-4">
+      <section className="container-p py-10 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         <ContactCard icon={Phone} title="اتصال هاتفي" subtitle="الرقم الرسمي لشركة برمجلي"
           actions={[
             { label: '01010254819', href: 'tel:01010254819' },
@@ -73,6 +73,7 @@ export default function Contact() {
           actions={[
             { label: 'barmagly.tech', href: 'https://barmagly.tech', external: true },
           ]} />
+        <FacebookCard />
       </section>
 
       <section className="container-p pb-12 grid md:grid-cols-[1fr,320px] gap-6">
@@ -187,6 +188,30 @@ function ContactCard({ icon: Ic, title, subtitle, actions }) {
           </a>
         ))}
       </div>
+    </div>
+  );
+}
+
+// Facebook card — its own component because it gets custom colors and an SVG
+// icon that lucide-react doesn't include.
+function FacebookCard() {
+  const url = 'https://www.facebook.com/people/%D9%82%D9%86%D8%A7%D9%88%D9%8A-Qinawy/61591702688179/';
+  return (
+    <div className="card p-5">
+      <div className="w-11 h-11 rounded-xl bg-[#1877F2]/10 text-[#1877F2] flex items-center justify-center mb-3">
+        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
+        </svg>
+      </div>
+      <h3 className="font-bold text-slate-900 mb-1">تابعنا على فيسبوك</h3>
+      <p className="text-xs text-slate-500 mb-3">لأحدث المقالات والتحديثات اليومية</p>
+      <a href={url} target="_blank" rel="noopener noreferrer"
+         className="inline-flex items-center gap-2 bg-[#1877F2] hover:bg-[#0e5fc0] transition text-white text-sm font-bold px-3 py-2 rounded-lg w-full justify-center">
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
+        </svg>
+        صفحة قناوي — Qinawy
+      </a>
     </div>
   );
 }

@@ -1,4 +1,6 @@
 {
+  "hospitals-qena-2026":    { "author": "khaled-ahmed",      "reviewed_by": "qena-correspondent" },
+  "koshari-qena":           { "author": "qena-correspondent","reviewed_by": "khaled-ahmed" },
   "hospitals-qena":         { "author": "khaled-ahmed",      "reviewed_by": "qena-correspondent" },
   "pharmacies-24h-qena":    { "author": "khaled-ahmed",      "reviewed_by": "qena-correspondent" },
   "dendera-temple-guide":   { "author": "qena-historian",    "reviewed_by": "khaled-ahmed" },

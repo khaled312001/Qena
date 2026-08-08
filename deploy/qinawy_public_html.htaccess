@@ -1,5 +1,14 @@
 Options -MultiViews
 
+# CRITICAL: bypass LiteSpeed/Apache's auto-serve of /index.html for the root
+# URL. Without this, requests for "/" get served from the static SPA shell
+# (~33K bytes, ~23 visible words) instead of going through Passenger SSR
+# (~40K bytes, ~475 visible words with full editorial intro). This was the
+# single biggest cause of repeated AdSense "Low value content" rejections —
+# the reviewer landed on / and saw an empty shell.
+DirectoryIndex disabled
+DirectoryIndex disabled.htm
+
 <IfModule mod_headers.c>
   # HSTS on EVERY response — including 301 redirects. After one HTTPS visit
   # the browser stops attempting http:// or www. on its own. (Googlebot
@@ -43,9 +52,18 @@ RewriteRule ^\.builds - [F,L]
 # SEO: dynamic sitemap.xml at the domain root, backed by the Node backend.
 RewriteRule ^sitemap\.xml$ /api/sitemap.xml [L]
 
+# Force "/" through Passenger BEFORE the static-file check below — otherwise
+# LiteSpeed's index file lookup serves /index.html as static and bypasses SSR.
+RewriteRule ^$ /api/render?path=/ [PT,L]
+
 # Static files (assets, ads.txt, robots.txt, favicons) — serve as-is.
+# Explicitly exclude index.html so it never gets served raw (would skip SSR).
 RewriteCond %{REQUEST_FILENAME} -f
+RewriteCond %{REQUEST_URI} !^/index\.html?$
 RewriteRule ^ - [L]
+
+# /index.html and /index → redirect to / (canonical homepage)
+RewriteRule ^index\.html?$ / [R=301,L]
 
 # /api/* requests are handled by public_html/api/.htaccess with its own
 # Passenger directives. Pass through so those rules apply.

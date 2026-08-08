@@ -18,7 +18,11 @@
     ],
     "icon": "👨‍💻",
     "color": "#0c4a6e",
-    "joined": "2025-09-01"
+    "joined": "2025-09-01",
+    "verification_links": [
+      { "label": "شركة برمجلي", "url": "https://barmagly.tech/" },
+      { "label": "تواصل مباشر", "url": "tel:+201060049287" }
+    ]
   },
   "khaled-ahmed": {
     "slug": "khaled-ahmed",
@@ -39,7 +43,11 @@
     ],
     "icon": "✍️",
     "color": "#7c2d12",
-    "joined": "2025-09-01"
+    "joined": "2025-09-01",
+    "verification_links": [
+      { "label": "شركة برمجلي", "url": "https://barmagly.tech/" },
+      { "label": "تواصل مباشر", "url": "tel:+201204593124" }
+    ]
   },
   "qena-historian": {
     "slug": "qena-historian",
@@ -60,7 +68,10 @@
     ],
     "icon": "📜",
     "color": "#a16207",
-    "joined": "2025-09-01"
+    "joined": "2025-09-01",
+    "verification_links": [
+      { "label": "جامعة جنوب الوادي — كلية الآثار", "url": "https://svu.edu.eg/" }
+    ]
   },
   "qena-correspondent": {
     "slug": "qena-correspondent",
@@ -81,6 +92,9 @@
     ],
     "icon": "🎙️",
     "color": "#be185d",
-    "joined": "2025-09-01"
+    "joined": "2025-09-01",
+    "verification_links": [
+      { "label": "الصفحة على قناوي فيسبوك", "url": "https://www.facebook.com/people/%D9%82%D9%86%D8%A7%D9%88%D9%8A-Qinawy/61591702688179/" }
+    ]
   }
 }
