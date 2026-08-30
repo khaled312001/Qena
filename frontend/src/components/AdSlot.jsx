@@ -1,18 +1,39 @@
 import { useEffect, useRef, useState } from 'react';
+import MonetagSlot from './MonetagSlot.jsx';
 
-// Non-intrusive AdSense slot — gated behind explicit opt-in.
-// CRITICAL: until VITE_ADS_ENABLED=true is set at build time, the component
-// renders NOTHING and the AdSense script is NEVER loaded. This is on purpose:
-// AdSense reviewers reject sites that serve live ad code during review.
+// Multi-network ad slot — routes to AdSense OR Monetag automatically based on
+// which env flag is enabled at build time. Existing call sites (<AdSlot
+// slot={AdSlot.INLINE} />) continue to work unchanged; they just render
+// whatever network is currently configured.
 //
-// Configure at frontend/.env.production AFTER AdSense approval:
+// Precedence order (first that's enabled wins):
+//   1. VITE_ADS_ENABLED=true          → render AdSense (traditional path)
+//   2. VITE_MONETAG_ENABLED=true      → render Monetag (fallback for sites
+//                                        AdSense keeps rejecting; MENA-heavy
+//                                        advertiser base pays better on
+//                                        Arabic Egyptian traffic anyway)
+//   3. (neither)                      → render nothing (default; keeps the
+//                                        site clean during network review)
+//
+// CRITICAL: neither script loads until its corresponding flag is set to true.
+// Reviewers land on ad-free pages; ads activate only after the network approves.
+//
+// Configure AdSense (after AdSense approval):
 //   VITE_ADS_ENABLED=true
 //   VITE_ADSENSE_CLIENT=ca-pub-XXXXXXXXXXXXXXXX
 //   VITE_ADSENSE_SLOT_INLINE=0000000000
 //   VITE_ADSENSE_SLOT_INFEED=1111111111
 //   VITE_ADSENSE_SLOT_SIDEBAR=2222222222
+//
+// Configure Monetag (after Monetag approval):
+//   VITE_MONETAG_ENABLED=true
+//   VITE_MONETAG_SDK_URL=https://groleegni.net/401/YYYYYYY
+//   VITE_MONETAG_ZONE_INLINE=1234567
+//   VITE_MONETAG_ZONE_INFEED=1234568
+//   VITE_MONETAG_ZONE_SIDEBAR=1234569
 
 const ADS_ENABLED = String(import.meta.env.VITE_ADS_ENABLED || '').toLowerCase() === 'true';
+const MONETAG_ENABLED = String(import.meta.env.VITE_MONETAG_ENABLED || '').toLowerCase() === 'true';
 const CLIENT = import.meta.env.VITE_ADSENSE_CLIENT || '';
 const ADSENSE_SCRIPT_SRC = 'pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
 
@@ -28,6 +49,16 @@ function loadAdsenseScript() {
   s.src = `https://${ADSENSE_SCRIPT_SRC}?client=${CLIENT}`;
   document.head.appendChild(s);
   scriptLoaded = true;
+}
+
+// Map "slot type" strings back to Monetag zone IDs. Existing call sites pass
+// a numeric slot ID from AdSlot.INLINE/INFEED/SIDEBAR; we detect which one
+// they passed and route to the matching Monetag zone.
+function monetagZoneFor(slot) {
+  if (slot === AdSlot.INLINE) return MonetagSlot.INLINE;
+  if (slot === AdSlot.INFEED) return MonetagSlot.INFEED;
+  if (slot === AdSlot.SIDEBAR) return MonetagSlot.SIDEBAR;
+  return MonetagSlot.INLINE || '';
 }
 
 export default function AdSlot({ slot, format = 'auto', responsive = true, className = '', label = true }) {
@@ -57,44 +88,44 @@ export default function AdSlot({ slot, format = 'auto', responsive = true, class
       const next = ins.getAttribute('data-ad-status');
       if (next) setAdStatus(next);
     };
-
     syncStatus();
-
     const observer = new MutationObserver(syncStatus);
-    observer.observe(ins, {
-      attributes: true,
-      attributeFilter: ['data-ad-status'],
-    });
-
+    observer.observe(ins, { attributes: true, attributeFilter: ['data-ad-status'] });
     return () => observer.disconnect();
   }, [slot]);
 
-  // Until AdSense approves and VITE_ADS_ENABLED=true is flipped at build
-  // time, render absolutely nothing. No clutter, no placeholder, no
-  // adsbygoogle.push call, no script tag — clean as the day the site shipped.
-  if (!ADS_ENABLED || !CLIENT || !slot) return null;
-  if (adStatus === 'unfilled' || adStatus === 'unfill-optimized') return null;
-
-  return (
-    <div className={`ad-slot my-6 ${className}`} dir="rtl">
-      {label && (
-        <div className="text-[10px] text-slate-400 mb-1.5 text-center tracking-wide uppercase">
-          إعلان
+  // AdSense enabled → render AdSense
+  if (ADS_ENABLED && CLIENT && slot) {
+    if (adStatus === 'unfilled' || adStatus === 'unfill-optimized') return null;
+    return (
+      <div className={`ad-slot my-6 ${className}`} dir="rtl">
+        {label && (
+          <div className="text-[10px] text-slate-400 mb-1.5 text-center tracking-wide uppercase">
+            إعلان
+          </div>
+        )}
+        <div className="card overflow-hidden p-0 bg-slate-50/60">
+          <ins
+            ref={insRef}
+            className="adsbygoogle block"
+            style={{ display: 'block', minHeight: 90 }}
+            data-ad-client={CLIENT}
+            data-ad-slot={slot}
+            data-ad-format={resolvedFormat}
+            data-full-width-responsive={responsive ? 'true' : 'false'}
+          />
         </div>
-      )}
-      <div className="card overflow-hidden p-0 bg-slate-50/60">
-        <ins
-          ref={insRef}
-          className="adsbygoogle block"
-          style={{ display: 'block', minHeight: 90 }}
-          data-ad-client={CLIENT}
-          data-ad-slot={slot}
-          data-ad-format={resolvedFormat}
-          data-full-width-responsive={responsive ? 'true' : 'false'}
-        />
       </div>
-    </div>
-  );
+    );
+  }
+
+  // AdSense disabled but Monetag enabled → route to Monetag with same slot placement
+  if (MONETAG_ENABLED) {
+    return <MonetagSlot zoneId={monetagZoneFor(slot)} className={className} label={label} />;
+  }
+
+  // Neither enabled → render nothing (review-safe default)
+  return null;
 }
 
 // Convenience slot IDs (read from env at build time)

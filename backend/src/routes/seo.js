@@ -350,7 +350,9 @@ function getIndexHtml() {
 }
 
 const HOMEPAGE_TITLE = 'قناوي | دليل قنا الشامل — مستشفيات، أطباء، صيدليات، فنادق، مطاعم، خدمات محافظة قنا';
-const HOMEPAGE_DESC = 'قناوي — دليل قنا الشامل المجاني. أرقام مستشفيات قنا، أطباء قنا بكل التخصصات، صيدليات 24 ساعة، فنادق قنا، مطاعم، كافيهات، بنوك، مصالح حكومية، محطات وقود، معابد دندرة. خدمة مجانية من شركة برمجلي.';
+// Meta description: kept <=160 chars (Google's SERP truncation point).
+// Focus on the strongest keywords + value proposition.
+const HOMEPAGE_DESC = 'قناوي — دليل قنا الشامل المجاني. مستشفيات، صيدليات 24 ساعة، فنادق، مطاعم، بنوك، معابد دندرة، وأرقام طوارئ. مقدم من شركة برمجلي.';
 
 const STATIC_META = {
   '/': { title: HOMEPAGE_TITLE, description: HOMEPAGE_DESC },
