@@ -17,10 +17,17 @@
     <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1" />
     <meta name="googlebot" content="index,follow" />
 
-    <!-- Google AdSense: meta-tag verification only (no script). The actual
-         adsbygoogle script is loaded conditionally by AdSlot.jsx ONLY when
-         VITE_ADS_ENABLED=true at build time — so reviewers see clean pages
-         during application, and the script runs only after approval. -->
+    <!-- Google AdSense verification + auto-ads script.
+         The script itself does not render any ads unless auto-ads are
+         enabled in the AdSense dashboard, or ad-unit tags are placed on
+         pages. Neither is currently configured, so this script is INERT:
+         it only satisfies AdSense ownership verification. The AdSlot.jsx
+         component (which would place ad-unit tags) remains gated behind
+         VITE_ADS_ENABLED=true and won't render anything until we flip
+         that flag post-approval. The meta tag below is a redundant
+         second verification method — either alone is sufficient. -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3653156634481888"
+         crossorigin="anonymous"></script>
     <meta name="google-adsense-account" content="ca-pub-3653156634481888" />
 
     <!-- Monetag site verification (fill in after signing up at monetag.com):
