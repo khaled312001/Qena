@@ -199,6 +199,10 @@
       ]
     }
     </script>
+    <!-- sae:cls-fix — while a page loaded its data the footer sat inside the first
+         screen, then jumped out of view when the content arrived (CLS 0.35-0.50 on
+         /numbers). main now always fills the screen below the header. -->
+    <style>#root main.flex-1{min-height:calc(100vh - 4rem);min-height:calc(100svh - 4rem)}</style>
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->

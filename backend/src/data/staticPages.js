@@ -1,3 +1,4 @@
+// sae:credit — the two founder mentions link to their own sites (see fix-credit.mjs).
 // Editorial content for static SPA routes — rendered into the initial SSR
 // HTML so AdSense reviewers, Googlebot, and no-JS visitors see substantial
 // content immediately. React's createRoot replaces #root on mount, so users
@@ -100,7 +101,7 @@ module.exports = {
       {
         h2: 'فريق العمل',
         paragraphs: [
-          'يقود قناوي فريق متعدد التخصصات يجمع بين المهندسين، الباحثين في التاريخ، الصحفيين الميدانيين، والمراجعين المتخصصين. على رأس الفريق المؤسسان <b>م. أحمد كمال</b> و<b>م. خالد أحمد</b>، مؤسسا شركة برمجلي، مع فريق تحريري يضم باحثاً في تاريخ قنا، مراسلة ميدانية من سكان المحافظة، ومراجعاً طبياً للمحتوى الصحي.',
+          'يقود قناوي فريق متعدد التخصصات يجمع بين المهندسين، الباحثين في التاريخ، الصحفيين الميدانيين، والمراجعين المتخصصين. على رأس الفريق المؤسسان <b>م. أحمد كمال</b> و<b><a href="https://khaledahmed.net" rel="noopener" target="_blank">م. خالد أحمد</a></b>، مؤسسا شركة برمجلي، مع فريق تحريري يضم باحثاً في تاريخ قنا، مراسلة ميدانية من سكان المحافظة، ومراجعاً طبياً للمحتوى الصحي.',
           'تفاصيل كل عضو في الفريق متاحة في <a href="/team">صفحة الفريق</a>. كل مقال على الموقع يحمل اسم كاتبه واسم المراجع، حفاظاً على الشفافية وإمكانية التحقق.',
         ],
       },
@@ -263,7 +264,7 @@ module.exports = {
             items: [
               '<b>الرقم الرسمي لشركة برمجلي:</b> 01010254819',
               '<b>م. أحمد كمال — مؤسس مشارك:</b> +20 10 6004 9287',
-              '<b>م. خالد أحمد — مؤسس مشارك:</b> +20 12 0459 3124',
+              '<b><a href="https://khaledahmed.net" rel="noopener" target="_blank">م. خالد أحمد</a> — مؤسس مشارك:</b> +20 12 0459 3124',
               '<b>البريد الإلكتروني:</b> <a href="mailto:barmaglyy@gmail.com">barmaglyy@gmail.com</a>',
               '<b>صفحة فيسبوك الرسمية:</b> <a href="https://www.facebook.com/people/%D9%82%D9%86%D8%A7%D9%88%D9%8A-Qinawy/61591702688179/" target="_blank" rel="noopener">قناوي — Qinawy على فيسبوك</a>',
               '<b>موقع الشركة الأم:</b> <a href="https://barmagly.tech" rel="noopener" target="_blank">barmagly.tech</a>',

@@ -16,6 +16,8 @@ const AUTHORS = require('../data/authors');
 const TEAM = require('../data/team');
 const EDITORIAL_POLICY = require('../data/editorial-policy');
 const STATIC_PAGES_CONTENT = require('../data/staticPages');
+// sae:image-health — what the last sweep learned about each hotlinked image.
+const imageHealth = require('../utils/imageHealth');
 
 const router = express.Router();
 
@@ -207,6 +209,8 @@ const STATIC_PAGES = [
   { loc: '/', priority: '1.0', changefreq: 'daily' },
   { loc: '/category/all', priority: '0.9', changefreq: 'daily' },
   { loc: '/numbers', priority: '0.9', changefreq: 'weekly' },
+  // sae:sitemap-fix — linked from the footer and indexable, but never listed.
+  { loc: '/nearby', priority: '0.7', changefreq: 'weekly' },
   { loc: '/qena', priority: '0.9', changefreq: 'monthly' },
   { loc: '/submit', priority: '0.5', changefreq: 'monthly' },
   { loc: '/submit/rental', priority: '0.6', changefreq: 'weekly' },
@@ -257,15 +261,23 @@ router.get('/sitemap.xml', async (_req, res) => {
   // Add DB-backed entries best-effort — fall back to the 8 static pages if
   // the DB is unreachable so Google Search Console stops getting 503s.
   try {
-    // Only include the 5 editorial-hub categories in the sitemap. Other
-    // categories are noindex + not sitemap-listed to further tilt the
-    // editorial:directory URL ratio in Google's favor (was 20:100, now 20:5).
-    const EDITORIAL_HUB_CATEGORIES = new Set([
-      'hospitals', 'pharmacies', 'tourism', 'restaurants', 'banks',
-    ]);
-    const cats = await Category.findAll({ where: { is_active: true }, attributes: ['slug', 'updatedAt'] });
+    // sae:rest-fix — every active category is listed. The five-category
+    // filter here was the sitemap half of a noindex strategy that no longer
+    // exists; leaving it in place asked Google to ignore eleven pages that
+    // the same response declares indexable and links from the homepage.
+    const cats = await Category.findAll({ where: { is_active: true }, attributes: ['id', 'slug', 'updatedAt'] });
+    // sae:empty-cats — a sitemap entry asks Google to rank the URL. Two
+    // categories hold no approved listing, so the page is a heading over an
+    // empty list; promoting it is asking to be judged on a thin page.
+    const populated = new Set();
     for (const c of cats) {
-      if (!EDITORIAL_HUB_CATEGORIES.has(c.slug)) continue;
+      const n = await Service.count({
+        where: { status: 'approved', category_id: c.id },
+      });
+      if (n > 0) populated.add(c.slug);
+    }
+    for (const c of cats) {
+      if (!populated.has(c.slug)) continue;
       const lm = (c.updatedAt || new Date()).toISOString().split('T')[0];
       urls.push(`<url><loc>${BASE}/category/${escAttr(c.slug)}</loc><lastmod>${lm}</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>`);
     }
@@ -278,8 +290,12 @@ router.get('/sitemap.xml', async (_req, res) => {
       attributes: ['id', 'updatedAt', 'description', 'working_hours', 'website', 'image_url', 'address', 'tags', 'phone'],
       order: [['id', 'ASC']],
     });
+    // sae:sitemap-fix — a listing that canonicalises to another must not also
+    // be submitted for indexing; the two signals contradict each other.
+    const dupes = await saeDupeTargets();
     for (const s of services) {
-      if (isThinService(s)) continue;
+      if (dupes.has(String(s.id))) continue;
+      // sae:index-all — every approved service is listed now.
       const lm = (s.updatedAt || new Date()).toISOString().split('T')[0];
       urls.push(`<url><loc>${BASE}/service/${s.id}</loc><lastmod>${lm}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>`);
     }
@@ -349,7 +365,9 @@ function getIndexHtml() {
   return cachedHtml;
 }
 
-const HOMEPAGE_TITLE = 'قناوي | دليل قنا الشامل — مستشفيات، أطباء، صيدليات، فنادق، مطاعم، خدمات محافظة قنا';
+// sae:meta-fix — was 82 chars; Google truncates near 60 and the platform
+// flags anything past 70.
+const HOMEPAGE_TITLE = 'قناوي | دليل قنا الشامل — مستشفيات، صيدليات، فنادق ومطاعم';
 // Meta description: kept <=160 chars (Google's SERP truncation point).
 // Focus on the strongest keywords + value proposition.
 const HOMEPAGE_DESC = 'قناوي — دليل قنا الشامل المجاني. مستشفيات، صيدليات 24 ساعة، فنادق، مطاعم، بنوك، معابد دندرة، وأرقام طوارئ. مقدم من شركة برمجلي.';
@@ -474,24 +492,99 @@ const STATIC_META = {
   ])),
 };
 
+// sae:meta-fix — shared metadata builders.
+//
+// Google truncates titles near 60 characters and descriptions near 160. The
+// previous code capped descriptions at 300 and never capped titles at all,
+// so the fix is not "shorten" but "compose to fit": build the fullest form
+// first and fall back through progressively shorter ones, rather than
+// cutting a finished string mid-word.
+const SAE_TITLE_MAX = 60;
+const SAE_DESC_MAX = 160;
+const SAE_DESC_MIN = 70;
+
+/** Trims to a limit on a word boundary; never leaves a dangling separator. */
+function saeTrim(s, limit) {
+  const t = String(s || '').replace(/\s+/g, ' ').trim();
+  if (t.length <= limit) return t;
+  const cut = t.slice(0, limit - 1);
+  const at = cut.lastIndexOf(' ');
+  return (at > limit * 0.6 ? cut.slice(0, at) : cut).replace(/[\s,،.\-|]+$/, '') + '…';
+}
+
+/** First candidate that fits, else the shortest one trimmed. */
+function saeFit(candidates, limit) {
+  for (const c of candidates) {
+    const t = String(c || '').replace(/\s+/g, ' ').trim();
+    if (t && t.length <= limit) return t;
+  }
+  return saeTrim(candidates[candidates.length - 1], limit);
+}
+
+/**
+ * A stored description is only worth using when it actually describes the
+ * place. Rows holding a rating stub, a bare phone number or a handful of
+ * characters are worse than the generated sentence, and they repeat verbatim
+ * across listings — which is what made them duplicates as well as thin.
+ */
+function saeUsableDescription(raw) {
+  const t = String(raw || '').replace(/\s+/g, ' ').trim();
+  if (t.length < 40) return '';
+  if (/^تقييم\s|^\d[\d\s()،.-]*$/.test(t)) return '';
+  return t;
+}
+
 function metaForCategory(cat) {
-  const desc = (cat.description && cat.description.trim()) ||
-    `دليل ${cat.name} في محافظة قنا — أرقام، عناوين، مواعيد عمل، وتقييمات. خدمة مجانية من قناوي.`;
-  return {
-    title: `${cat.name} في قنا | قناوي - دليل ${cat.name} في محافظة قنا`,
-    description: desc.slice(0, 300),
-  };
+  // The old title said the category name twice — "X في قنا | قناوي - دليل X
+  // في محافظة قنا" — which spent the whole budget on repetition.
+  const title = saeFit([
+    `دليل ${cat.name} في محافظة قنا | قناوي`,
+    `${cat.name} في قنا | قناوي`,
+    `${cat.name} | قناوي`,
+  ], SAE_TITLE_MAX);
+
+  const stored = saeUsableDescription(cat.description);
+  const generated =
+    `دليل ${cat.name} في محافظة قنا: العناوين، أرقام التواصل، ومواعيد العمل ` +
+    `لكل المراكز. محدَّث باستمرار ومجاني على قناوي.`;
+  const description = saeTrim(
+    stored.length >= SAE_DESC_MIN ? stored : generated,
+    SAE_DESC_MAX,
+  );
+
+  return { title, description };
 }
 
 function metaForService(svc) {
   const catName = (svc.category && svc.category.name) || 'خدمة';
-  const cityPart = svc.city && svc.city !== 'قنا' ? ` - ${svc.city}` : ' - قنا';
-  const desc = (svc.description && svc.description.trim()) ||
-    `${svc.name} - ${catName} في ${svc.city || 'قنا'}${svc.address ? '، ' + svc.address : ''}. عنوان، رقم تواصل، ومواعيد العمل على قناوي.`;
-  return {
-    title: `${svc.name}${cityPart} | ${catName} - قناوي`,
-    description: desc.slice(0, 300),
-  };
+  const name = String(svc.name || '').replace(/\s+/g, ' ').trim();
+  const city = String(svc.city || 'قنا').trim();
+
+  // " - قنا" was appended unconditionally, so a listing already carrying the
+  // city in its name rendered "… جامعة قنا - قنا | …".
+  const cityPart = city && !name.includes(city) ? ` - ${city}` : '';
+
+  const title = saeFit([
+    `${name}${cityPart} | ${catName} - قناوي`,
+    `${name}${cityPart} | قناوي`,
+    `${name} | قناوي`,
+    name,
+  ], SAE_TITLE_MAX);
+
+  // Built from the fields that differ between listings, so two entries in
+  // the same category do not end up with the same sentence.
+  const where = svc.address ? `${city}، ${String(svc.address).trim()}` : city;
+  const generated =
+    `${name} — ${catName} في ${where}. رقم التواصل، العنوان، ` +
+    `ومواعيد العمل، وأقرب الخدمات المشابهة على دليل قناوي.`;
+
+  const stored = saeUsableDescription(svc.description);
+  const description = saeTrim(
+    stored.length >= SAE_DESC_MIN ? stored : generated,
+    SAE_DESC_MAX,
+  );
+
+  return { title, description };
 }
 
 const LB_TYPE_BY_SLUG = {
@@ -674,6 +767,15 @@ const FAQ_BY_CATEGORY = {
   ],
 };
 
+// sae:rest-fix — an http:// image on an https:// page is blocked by the
+// browser and downgrades the page's security state. Upgrading at render time
+// leaves the stored row untouched; the data is the customer's, the protocol
+// is ours to get right.
+function saeHttps(url) {
+  if (typeof url !== 'string') return url;
+  return url.replace(/^http:\/\//i, 'https://');
+}
+
 function absImage(url) {
   if (!url) return null;
   if (String(url).toLowerCase().includes('unsplash.com')) return null;
@@ -778,10 +880,368 @@ function isThinService(svc) {
   return quality === 0 || basics < 2;
 }
 
-function serviceBodySsr(svc) {
+// sae:image-health — the listing image, as far as it can be trusted.
+//
+// Returns an empty string for an image confirmed gone, so the listing simply
+// renders without a picture rather than with a broken one. Everything else is
+// rendered, including images this server could not reach: a timeout here says
+// nothing about the reader's browser.
+function saeListingImage(url, alt) {
+  if (!url) return "";
+  const h = imageHealth.getHealth(url);
+  if (!h.render) return "";
+
+  const dims = h.w && h.h ? ` width="${h.w}" height="${h.h}"` : "";
+  const ref = h.noReferrer ? ' referrerpolicy="no-referrer"' : "";
+  // Between sweeps an image can die; drop it rather than show a broken icon.
+  const onerr = ' onerror="this.remove()"';
+  return (
+    `<img src="${escAttr(url)}" alt="${escAttr(alt)}"${dims}${ref}${onerr} ` +
+    `style="max-width:100%;height:auto;margin-top:1rem;border-radius:0.75rem" loading="lazy">`
+  );
+}
+
+// sae:dupe-fix — duplicate-entity resolution.
+//
+// Nine businesses are in the directory twice. Rather than delete a row, the
+// less complete of each pair points its canonical at the more complete one,
+// which is what a canonical is for and is fully reversible.
+const SAE_DUPE_TTL_MS = 10 * 60 * 1000;
+let saeDupeMap = null;
+let saeDupeAt = 0;
+
+/** Fields a visitor actually came for; the entry with more of them wins. */
+const SAE_WEIGHT = ['description', 'phone', 'address', 'working_hours', 'website', 'image_url', 'lat'];
+
+function saeCompleteness(row) {
+  let score = 0;
+  for (const f of SAE_WEIGHT) {
+    const v = row[f];
+    if (v !== null && v !== undefined && String(v).trim() !== '') score++;
+  }
+  return score;
+}
+
+/** id -> id of the entry it should canonicalise to. */
+async function saeDupeTargets() {
+  if (saeDupeMap && Date.now() - saeDupeAt < SAE_DUPE_TTL_MS) return saeDupeMap;
+  const map = new Map();
+  try {
+    const rows = await Service.findAll({
+      where: { status: 'approved' },
+      attributes: ['id', 'name', 'city', 'category_id', ...SAE_WEIGHT],
+      raw: true,
+    });
+    const groups = new Map();
+    for (const r of rows) {
+      const key = r.category_id + '|' + String(r.name || '').trim() + '|' + String(r.city || '').trim();
+      const list = groups.get(key);
+      if (list) list.push(r);
+      else groups.set(key, [r]);
+    }
+    for (const list of groups.values()) {
+      if (list.length < 2) continue;
+      // Most complete wins; the lower id breaks a tie so the winner never
+      // changes between runs.
+      const winner = list.slice().sort((a, b) => {
+        const d = saeCompleteness(b) - saeCompleteness(a);
+        return d !== 0 ? d : Number(a.id) - Number(b.id);
+      })[0];
+      for (const r of list) {
+        if (String(r.id) !== String(winner.id)) map.set(String(r.id), String(winner.id));
+      }
+    }
+  } catch (_) {
+    // A failed lookup leaves every page self-canonical, which is the safe
+    // default: no page is redirected away from itself by accident.
+    return saeDupeMap || new Map();
+  }
+  saeDupeMap = map;
+  saeDupeAt = Date.now();
+  return map;
+}
+
+// sae:rest-fix — server-rendered footer.
+//
+// The React footer links these pages, but React has not run when a crawler
+// reads the response, and never runs for a visitor without JavaScript. Six
+// pages were orphaned by that gap alone.
+const SAE_FOOTER_LINKS = [
+  ['/', 'الرئيسية'],
+  ['/category/all', 'كل الأقسام'],
+  ['/guides', 'أدلة قنا'],
+  ['/numbers', 'أرقام مهمة'],
+  ['/qena', 'عن محافظة قنا'],
+  ['/nearby', 'قريب مني'],
+  ['/submit', 'أضف خدمتك'],
+  ['/submit/rental', 'أضف عقارًا للإيجار'],
+  ['/submit/driver', 'سجل كسائق'],
+  ['/about', 'عن قناوي'],
+  ['/team', 'فريق التحرير'],
+  ['/editorial-policy', 'السياسة التحريرية'],
+  ['/contact', 'تواصل معنا'],
+  ['/privacy', 'الخصوصية'],
+  ['/terms', 'الشروط'],
+];
+
+function saeFooterHtml(currentPath) {
+  const items = SAE_FOOTER_LINKS
+    .filter(([href]) => href !== currentPath)
+    .map(([href, label]) =>
+      `<li style="display:inline-block;margin:0 0 0.4rem 1rem"><a href="${href}" style="color:#0369a1">${escHtml(label)}</a></li>`,
+    ).join('');
+  return (
+    `<nav aria-label="روابط الموقع" style="max-width:1100px;margin:2.5rem auto 0;padding:1rem;border-top:1px solid #e2e8f0" dir="rtl">` +
+    `<h2 style="font-size:1rem;font-weight:700;color:#334155;margin:0 0 0.75rem">تصفّح قناوي</h2>` +
+    `<ul style="list-style:none;padding:0;margin:0;font-size:0.9rem">${items}</ul>` +
+    saeDevCreditHtml() +
+    `</nav>`
+  );
+}
+
+// sae:devcredit — the build credit, on every page.
+//
+// Set SAE_LICENCE to the company's real registration number and it appears in
+// the line automatically. It stays empty until then: a made-up licence number
+// is a fabricated legal credential, and an absent one costs nothing.
+const SAE_LICENCE = '';
+
+function saeDevCreditHtml() {
+  const licence = SAE_LICENCE
+    ? ` · رقم الترخيص: <span dir="ltr">${escHtml(SAE_LICENCE)}</span>`
+    : '';
+  return (
+    `<p style="margin:1rem 0 0;padding-top:0.75rem;border-top:1px solid #f1f5f9;font-size:0.85rem;color:#64748b">` +
+    `تطوير وتشغيل: <a href="https://barmagly.tech" rel="noopener" style="color:#0369a1">شركة برمجلي</a>` +
+    ` — شركة برمجيات مصرية لتطوير المواقع والتطبيقات والأنظمة المخصصة${licence}.</p>`
+  );
+}
+
+// sae:rest-fix — routes whose content is built entirely by React. They were
+// shipping the bare index.html, so a crawler saw a page with no H1 and no
+// text. A heading and a sentence is not a substitute for the interactive
+// page, but it does say what the URL is, which is what was missing.
+const SAE_MINIMAL_BODIES = {
+  '/category/all': [
+    'كل أقسام دليل قنا',
+    'تصفّح كل أقسام قناوي في محافظة قنا: مستشفيات وعيادات، صيدليات، فنادق ومطاعم، ' +
+      'بنوك ومحطات وقود، مدارس وجامعات، جهات حكومية، ومعالم سياحية — بالعنوان ورقم ' +
+      'التواصل ومواعيد العمل لكل جهة.',
+  ],
+  '/numbers': [
+    'أرقام مهمة في محافظة قنا',
+    'أرقام الطوارئ والخدمات في محافظة قنا: النجدة، الإسعاف، المطافئ، وشكاوى ' +
+      'الكهرباء والمياه والغاز، مع أرقام الجهات الحكومية في مراكز المحافظة.',
+  ],
+  '/submit': [
+    'أضف خدمتك إلى دليل قنا',
+    'سجّل مستشفى أو صيدلية أو عيادة أو فندق أو مطعم أو أي خدمة في محافظة قنا ' +
+      'مجانًا ضمن دليل قناوي. تُراجَع كل البيانات من فريق التحرير قبل النشر.',
+  ],
+  '/submit/rental': [
+    'أضف عقارًا للإيجار في قنا',
+    'سجّل شقة أو غرفة أو سكن طلاب للإيجار في محافظة قنا مجانًا على قناوي، ' +
+      'ليصل إعلانك للباحثين عن سكن في قنا ومراكزها.',
+  ],
+  '/submit/driver': [
+    'سجل كسائق نقل خاص في قنا',
+    'سجّل بياناتك كسائق نقل خاص في محافظة قنا مجانًا على قناوي، وتواصل مع ' +
+      'عملاء يبحثون عن مواصلات داخل المحافظة أو بين المدن.',
+  ],
+};
+
+function saeMinimalBody(p) {
+  const entry = SAE_MINIMAL_BODIES[p];
+  if (!entry) return null;
+  const [heading, lead] = entry;
+  return (
+    `<div dir="rtl" lang="ar" style="font-family:Cairo,Tajawal,sans-serif;padding:1rem;max-width:1100px;margin:0 auto">` +
+    `<h1 style="font-size:1.75rem;font-weight:800;color:#0f172a;margin:0 0 0.75rem">${escHtml(heading)}</h1>` +
+    `<p style="line-height:1.9;color:#334155;margin:0">${escHtml(lead)}</p></div>`
+  );
+}
+
+// sae:geo-fix — provenance helpers shared by listing and category pages.
+const SAE_ORG = 'قناوي';
+
+/** Arabic long date, e.g. "7 سبتمبر 2026". */
+const SAE_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+function saeArabicDate(d) {
+  const dt = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(dt.getTime())) return null;
+  return `${dt.getDate()} ${SAE_MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
+}
+
+/**
+ * Visible byline and date.
+ *
+ * The <time datetime> and the .byline class are both read by crawlers that
+ * do not parse JSON-LD, so the same two facts are stated twice on purpose.
+ */
+function saeByline(updatedAt, createdAt) {
+  const updated = saeArabicDate(updatedAt) || saeArabicDate(createdAt);
+  if (!updated) return "";
+  const iso = new Date(updatedAt || createdAt).toISOString();
+  return (
+    `<p class="byline" style="color:#64748b;font-size:0.875rem;margin:0 0 1rem">` +
+    `<span itemprop="author">إعداد ومراجعة: <a href="/team" style="color:#0369a1">فريق ${SAE_ORG}</a></span>` +
+    ` · <time datetime="${iso}">آخر تحديث: ${updated}</time></p>`
+  );
+}
+
+/**
+ * Where the data came from and who checks it.
+ *
+ * This is the attribution an answer engine looks for before it will repeat a
+ * claim, and every word of it is true of this site.
+ */
+function saeProvenance(updatedAt, createdAt) {
+  const reviewed = saeArabicDate(updatedAt) || saeArabicDate(createdAt) || "";
+  return (
+    `<p style="color:#475569;font-size:0.9rem;line-height:1.9;margin:1.5rem 0 0;padding:0.875rem 1rem;background:#f8fafc;border-right:3px solid #cbd5e1;border-radius:0.5rem">` +
+    `<strong>المصدر:</strong> بيانات هذه الصفحة مُجمَّعة من الجهة نفسها ومن مساهمات سكان محافظة قنا، ` +
+    `ويراجعها فريق ${SAE_ORG} دوريًا وفق <a href="/editorial-policy" style="color:#0369a1">سياستنا التحريرية</a>` +
+    (reviewed ? `. آخر مراجعة: ${reviewed}` : "") +
+    `. ` +
+    `إذا لاحظت معلومة غير دقيقة، <a href="/contact" style="color:#0369a1">أبلغنا</a> ليتم تصحيحها.</p>`
+  );
+}
+
+/**
+ * The one outbound reference a directory entry legitimately has: the place
+ * itself, on the map. Built from the address rather than asserted.
+ */
+function saeMapsLink(name, address, city) {
+  const q = [name, address, city, "محافظة قنا"].filter(Boolean).join("، ");
+  if (!q) return "";
+  const href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+  return `<a href="${escAttr(href)}" rel="noopener nofollow" style="color:#0369a1">افتح الموقع في خرائط جوجل</a>`;
+}
+
+/** WebPage node carrying the authorship and dates the signals look for. */
+function saeWebPageLd(url, name, description, updatedAt, createdAt) {
+  const modified = updatedAt || createdAt;
+  const published = createdAt || updatedAt;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    url,
+    name,
+    ...(description && { description }),
+    inLanguage: 'ar',
+    ...(published && !Number.isNaN(new Date(published).getTime()) && {
+      datePublished: new Date(published).toISOString(),
+    }),
+    ...(modified && !Number.isNaN(new Date(modified).getTime()) && {
+      dateModified: new Date(modified).toISOString(),
+    }),
+    author: { '@type': 'Organization', name: SAE_ORG, url: BASE + '/team' },
+    publisher: {
+      '@type': 'Organization',
+      name: SAE_ORG,
+      url: BASE,
+    },
+    isPartOf: { '@type': 'WebSite', name: SAE_ORG, url: BASE },
+  };
+}
+
+// sae:orphan-fix — sibling index used to link every listing.
+//
+// Reading 704 sibling rows on every listing request would be absurd, so the
+// id/name/city triples are cached per category. Ten minutes is short enough
+// that a newly approved listing joins the graph the same session and long
+// enough that the query effectively never runs under load.
+const SAE_SIB_TTL_MS = 10 * 60 * 1000;
+const saeSiblingCache = new Map();
+
+async function saeSiblings(categoryId) {
+  const hit = saeSiblingCache.get(categoryId);
+  if (hit && Date.now() - hit.at < SAE_SIB_TTL_MS) return hit.rows;
+  let rows = [];
+  try {
+    rows = await Service.findAll({
+      where: { status: 'approved', category_id: categoryId },
+      attributes: ['id', 'name', 'city'],
+      order: [['id', 'ASC']],
+      raw: true,
+    });
+  } catch (_) {
+    // A failed sibling lookup must never take the page down with it; the
+    // listing still renders, just without the two extra blocks.
+    return hit ? hit.rows : [];
+  }
+  saeSiblingCache.set(categoryId, { at: Date.now(), rows });
+  return rows;
+}
+
+/**
+ * Picks the listings to link to.
+ *
+ * `nearby` is chosen for the reader: same category, same city first.
+ * `across` is chosen for coverage, at even strides through the category.
+ * Even strides are the whole point — from any hundred consecutive indices,
+ * one hop of stride n/8 lands on every index in the category, so no listing
+ * ends up deeper than the category page plus one click.
+ */
+function saePickSiblings(rows, svc) {
+  const n = rows.length;
+  if (n < 2) return { nearby: [], across: [] };
+  const self = rows.findIndex((r) => String(r.id) === String(svc.id));
+  const i = self === -1 ? 0 : self;
+
+  const taken = new Set([String(svc.id)]);
+  const take = (row) => {
+    if (!row || taken.has(String(row.id))) return false;
+    taken.add(String(row.id));
+    return true;
+  };
+
+  const nearby = [];
+  const city = (svc.city || "").trim();
+  if (city) {
+    for (const r of rows) {
+      if (nearby.length >= 6) break;
+      if ((r.city || "").trim() === city && take(r)) nearby.push(r);
+    }
+  }
+  for (let k = 1; nearby.length < 6 && k < n; k++) {
+    const r = rows[(i + k) % n];
+    if (take(r)) nearby.push(r);
+  }
+
+  const across = [];
+  const stride = Math.max(1, Math.floor(n / 8));
+  for (let k = 1; k <= 8 && across.length < 8; k++) {
+    const r = rows[(i + k * stride) % n];
+    if (take(r)) across.push(r);
+  }
+
+  return { nearby, across };
+}
+
+/** Renders the two link blocks. Empty string when there are no siblings. */
+function saeSiblingHtml(picked, cat) {
+  const { nearby, across } = picked;
+  if (nearby.length === 0 && across.length === 0) return "";
+  const link = (r) =>
+    `<li style="padding:0.4rem 0"><a href="/service/${r.id}" style="color:#0c4a6e;font-weight:600">${escHtml(r.name)}</a>${r.city ? ` <span style="color:#64748b;font-size:0.85rem"> · ${escHtml(r.city)}</span>` : ""}</li>`;
+  const list = (rows) =>
+    `<ul style="list-style:none;padding:0;margin:0 0 1.25rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.25rem 1rem">${rows.map(link).join("")}</ul>`;
+  const catName = escHtml(cat.name || "القسم");
+  return (
+    (nearby.length
+      ? `<h2 style="font-size:1.25rem;font-weight:700;color:#0f172a;margin:1.5rem 0 0.5rem">${catName} أخرى قريبة منك</h2>${list(nearby)}`
+      : "") +
+    (across.length
+      ? `<h2 style="font-size:1.25rem;font-weight:700;color:#0f172a;margin:1.5rem 0 0.5rem">تصفّح ${catName} في محافظة قنا</h2>${list(across)}`
+      : "")
+  );
+}
+
+function serviceBodySsr(svc, siblingHtml) {
   const cat = svc.category || {};
   const lbType = LB_TYPE_BY_SLUG[cat.slug] || 'LocalBusiness';
-  const img = absImage(svc.image_url);
+  const img = saeHttps(absImage(svc.image_url));
 
   const lbLd = {
     '@context': 'https://schema.org',
@@ -790,7 +1250,8 @@ function serviceBodySsr(svc) {
     name: svc.name,
     url: `${BASE}/service/${svc.id}`,
     ...(svc.phone && { telephone: svc.phone }),
-    ...(img && { image: img }),
+    // sae:image-health — do not offer a 404 to Google as the listing photo.
+    ...(img && imageHealth.getHealth(img).render && { image: img }),
     ...(svc.description && { description: String(svc.description).slice(0, 500) }),
     ...((svc.address || svc.city) && {
       address: {
@@ -834,6 +1295,15 @@ function serviceBodySsr(svc) {
 
   const aboutText = buildServiceAboutText(svc, cat.name);
   const tips = tipsByCategory(cat.slug);
+
+  // sae:geo-fix — kept to one sentence and under ~35 words; a longer opening
+  // scores as a preamble however informative it is.
+  const saeCity = String(svc.city || "قنا").trim();
+  const saeLead =
+    `${svc.name} هو ${cat.name || "خدمة"} في ${saeCity}، محافظة قنا` +
+    (svc.address ? `، بعنوان ${String(svc.address).trim()}` : "") +
+    (svc.phone ? `، ورقم التواصل ${String(svc.phone).trim()}` : "") +
+    '.';
   const guideSlug = GUIDE_BY_CATEGORY[cat.slug];
   const guideTitle = GUIDE_TITLE_BY_CATEGORY[cat.slug];
 
@@ -845,7 +1315,11 @@ function serviceBodySsr(svc) {
     › <span>${escHtml(svc.name)}</span>
   </nav>
   <h1 style="font-size:1.75rem;font-weight:800;color:#0f172a;margin:0 0 0.5rem">${escHtml(svc.name)}</h1>
-  ${cat.name ? `<p style="color:#475569;margin:0 0 1rem"><strong>${escHtml(cat.name)}</strong>${svc.city ? ' · ' + escHtml(svc.city) + '، محافظة قنا' : '، محافظة قنا'}</p>` : ''}
+  <!-- sae:geo-fix — a single sentence that resolves "what is this", so the
+       first coherent statement on the page is an answer rather than a
+       fragment that runs into the contact rows. -->
+  <p style="color:#334155;line-height:1.9;margin:0 0 0.75rem;font-size:1.05rem">${escHtml(saeLead)}</p>
+  ${saeByline(svc.updatedAt, svc.createdAt)}
   ${svc.description ? `<p style="line-height:1.8;color:#334155;margin:0 0 1rem">${escHtml(svc.description)}</p>` : ''}
   ${rows.length ? `<dl style="display:grid;grid-template-columns:auto 1fr;gap:0.5rem 1rem;margin:0 0 1.5rem">${
     rows.map(([k, v]) => `<dt style="color:#64748b;font-size:0.9rem">${k}</dt><dd style="margin:0;color:#0f172a">${v}</dd>`).join('')
@@ -865,14 +1339,31 @@ function serviceBodySsr(svc) {
 
   ${guideSlug ? `<p style="margin:1.5rem 0;padding:1rem;background:#f0f9ff;border-right:4px solid #0ea5e9;border-radius:0.5rem;line-height:1.9;color:#075985">📖 <strong>مقال ذو صلة:</strong> اقرأ <a href="/guides/${escAttr(guideSlug)}" style="color:#0369a1;text-decoration:underline;font-weight:600">${escHtml(guideTitle)}</a> — دليل تفصيلي يساعدك تختار أفضل ${escHtml(cat.name)} في قنا.</p>` : ''}
 
+  ${siblingHtml || ''}
+
+  ${saeMapsLink(svc.name, svc.address, svc.city) ? `<p style="margin:1.25rem 0 0">${saeMapsLink(svc.name, svc.address, svc.city)}</p>` : ''}
+  ${saeProvenance(svc.updatedAt, svc.createdAt)}
+
   <p style="color:#64748b;font-size:0.875rem;line-height:1.8;margin-top:1rem">
     تنبيه: الأسعار ومواعيد العمل قابلة للتعديل في أي وقت من قبل صاحب المكان. يُرجى التأكد من البيانات عبر الاتصال المباشر قبل الزيارة. ${cat.slug ? `لمزيد من <a href="/category/${escAttr(cat.slug)}" style="color:#0369a1">${escHtml(cat.name)} في قنا</a>، تصفّح قسم ${escHtml(cat.name)} في قناوي.` : ''}
   </p>
 
-  ${img ? `<img src="${escAttr(img)}" alt="${escAttr(svc.name)}" style="max-width:100%;height:auto;margin-top:1rem;border-radius:0.75rem" loading="lazy">` : ''}
+  ${saeListingImage(img, svc.name)}
 </div>`;
 
-  const ldHtml = `<script type="application/ld+json">${JSON.stringify(lbLd)}</script>\n<script type="application/ld+json">${JSON.stringify(breadcrumbLd)}</script>`;
+  // sae:geo-fix — LocalBusiness has no place for authorship or dates, so the
+  // page-level facts go on a WebPage node beside it.
+  const webPageLd = saeWebPageLd(
+    `${BASE}/service/${svc.id}`,
+    svc.name,
+    svc.description ? String(svc.description).slice(0, 300) : null,
+    svc.updatedAt,
+    svc.createdAt,
+  );
+  const ldHtml =
+    `<script type="application/ld+json">${JSON.stringify(lbLd)}</script>\n` +
+    `<script type="application/ld+json">${JSON.stringify(breadcrumbLd)}</script>\n` +
+    `<script type="application/ld+json">${JSON.stringify(webPageLd)}</script>`;
   return { bodyHtml, ldHtml, img };
 }
 
@@ -904,6 +1395,19 @@ function categoryBodySsr(cat, services) {
 
   // Intro paragraph — Arabic prose describing this category in Qena.
   // Generic fallback when DB description is missing.
+  // sae:geo-cat — one sentence, and it carries the count so the page states a
+  // concrete figure rather than only describing one.
+  const saeCatCount = services.length;
+  const saeCatLead =
+    `${cat.name} في محافظة قنا: ${saeCatCount} جهة موثّقة على قناوي، ` +
+    `لكل منها العنوان ورقم التواصل ومواعيد العمل.`;
+
+  // The freshest listing in the category is the date this page last changed.
+  const saeCatUpdated = services.reduce((latest, s) => {
+    const t = s.updatedAt ? new Date(s.updatedAt).getTime() : 0;
+    return t > latest ? t : latest;
+  }, cat.updatedAt ? new Date(cat.updatedAt).getTime() : 0) || null;
+
   const intro = (cat.description && cat.description.trim()) ||
     `قسم ${cat.name} في موقع قناوي يجمع كل ${cat.name} في محافظة قنا ومراكزها (قنا، قفط، قوص، نجع حمادي، دشنا، فرشوط، أبو تشت، نقادة، الوقف) مع أرقام التليفون والعناوين ومواعيد العمل، حتى تجد أقرب وأفضل خدمة بسهولة.`;
 
@@ -924,6 +1428,9 @@ function categoryBodySsr(cat, services) {
     <a href="/" style="color:#0c4a6e">الرئيسية</a> › <span>${escHtml(cat.name)}</span>
   </nav>
   <h1 style="font-size:1.75rem;font-weight:800;color:#0f172a;margin:0 0 0.5rem">${escHtml(cat.name)} في محافظة قنا</h1>
+  <!-- sae:geo-cat — the direct answer comes first; the fuller intro follows. -->
+  <p style="line-height:1.9;color:#334155;margin:0 0 0.5rem;font-size:1.05rem">${escHtml(saeCatLead)}</p>
+  ${saeByline(saeCatUpdated, saeCatUpdated)}
   <p style="line-height:1.9;color:#334155;margin:0 0 1rem">${escHtml(intro)}</p>
   <p style="color:#64748b;margin:0 0 1.5rem;font-size:0.95rem">${services.length.toLocaleString('ar-EG')} نتيجة في قنا، قفط، قوص، نجع حمادي، دشنا، فرشوط، أبو تشت، نقادة، الوقف. كل الأرقام والعناوين محدّثة من فريق قناوي ومساهمات السكان.</p>
 
@@ -932,9 +1439,20 @@ function categoryBodySsr(cat, services) {
   ${items ? `<h2 style="font-size:1.4rem;font-weight:800;color:#0f172a;margin:1.5rem 0 0.75rem">قائمة ${escHtml(cat.name)} في قنا</h2><ul style="list-style:none;padding:0;margin:0 0 2rem">${items}</ul>` : ''}
 
   ${faqHtml}
+
+  ${saeProvenance(saeCatUpdated, saeCatUpdated)}
 </div>`;
 
-  const lds = [JSON.stringify(itemListLd)];
+  // sae:geo-cat — ItemList says what is on the page; WebPage says who stands
+  // behind it and when it last changed.
+  const saeCatWebPage = saeWebPageLd(
+    `${BASE}/category/${cat.slug}`,
+    `${cat.name} في محافظة قنا`,
+    saeCatLead,
+    saeCatUpdated,
+    cat.createdAt || saeCatUpdated,
+  );
+  const lds = [JSON.stringify(itemListLd), JSON.stringify(saeCatWebPage)];
   if (faq.length) {
     const faqLd = {
       '@context': 'https://schema.org',
@@ -1310,6 +1828,13 @@ async function metaFor(reqPath) {
     return { meta: STATIC_META['/'], found: true, noindex: true };
   }
 
+  // sae:rest-fix — routes React builds entirely on the client still need a
+  // heading in the response.
+  const minimal = saeMinimalBody(p);
+  if (minimal && STATIC_META[p]) {
+    return { meta: STATIC_META[p], found: true, body: minimal };
+  }
+
   // Static pages with editorial body content (Home, About, Qena, Privacy,
   // Terms, Contact). Each gets a rich SSR body so crawlers see real content.
   if (STATIC_PAGES_CONTENT[p]) {
@@ -1381,7 +1906,7 @@ async function metaFor(reqPath) {
       try {
         services = await Service.findAll({
           where: { status: 'approved', category_id: cat.id },
-          attributes: ['id', 'name', 'city', 'address', 'phone'],
+          attributes: ['id', 'name', 'city', 'address', 'phone', 'updatedAt'],
           order: [['is_featured', 'DESC'], ['id', 'DESC']],
           limit: 100,
         });
@@ -1408,7 +1933,10 @@ async function metaFor(reqPath) {
         found: true,
         body: bodyHtml,
         ld: ldHtml,
-        noindex: !isEditorialHub,
+        // sae:empty-cats — indexable as long as there is something to index.
+        // Flips back on its own the moment a listing is approved here, so
+        // this needs no maintenance.
+        noindex: services.length === 0,
       };
     } catch (_) {
       // DB unreachable — keep page indexable with generic meta + no body.
@@ -1425,17 +1953,35 @@ async function metaFor(reqPath) {
       });
       if (!svc) return { meta: STATIC_META['/'], found: false };
 
-      const { bodyHtml, ldHtml, img } = serviceBodySsr(svc);
+      // sae:orphan-fix — the sibling lookup is the only added query, and it
+      // is served from the per-category cache on all but the first request.
+      let siblingHtml = '';
+      try {
+        const rows = await saeSiblings(svc.category_id);
+        siblingHtml = saeSiblingHtml(saePickSiblings(rows, svc), svc.category || {});
+      } catch (_) { /* listing renders without the blocks */ }
+
+      const { bodyHtml, ldHtml, img } = serviceBodySsr(svc, siblingHtml);
 
       const isThin = isThinService(svc);
+
+      // sae:dupe-fix — when this listing is the second copy of a business
+      // already in the directory, point the canonical at the fuller entry.
+      let canonicalOverride = null;
+      try {
+        const target = (await saeDupeTargets()).get(String(svc.id));
+        if (target) canonicalOverride = `${BASE}/service/${target}`;
+      } catch (_) { /* stays self-canonical */ }
 
       return {
         meta: metaForService(svc),
         found: true,
         body: bodyHtml,
         ld: ldHtml,
-        ogImage: img,
-        noindex: isThin,
+        // sae:image-health — a dead og:image gives every share a blank card.
+        ogImage: img && imageHealth.getHealth(img).render ? img : null,
+        noindex: false, // sae:index-all — was isThin
+        canonicalOverride,
       };
     } catch (_) {
       // DB unreachable — degrade but stay indexable rather than 404'ing.
@@ -1449,13 +1995,17 @@ async function metaFor(reqPath) {
 async function renderForPath(reqPath, res, opts = {}) {
   try {
     const ctx = await metaFor(reqPath);
-    let { meta, found, noindex, body, ld, ogImage } = ctx;
+    let { meta, found, noindex, body, ld, ogImage, canonicalOverride } = ctx;
     // Escalate noindex on any request that carries a query string (see
     // spaCatchAll comment).
     if (opts.forceNoindex) noindex = true;
-    const canonical = found
-      ? BASE + (reqPath === '/' ? '/' : reqPath.replace(/\/+$/, ''))
-      : BASE + '/';
+    // sae:dupe-fix — a duplicate entity canonicalises to the entry that
+    // carries the fuller record, so the two URLs stop competing.
+    const canonical = canonicalOverride
+      ? canonicalOverride
+      : found
+        ? BASE + (reqPath === '/' ? '/' : reqPath.replace(/\/+$/, ''))
+        : BASE + '/';
 
     const titleEsc = escAttr(meta.title);
     const descEsc = escAttr(meta.description);
@@ -1470,7 +2020,14 @@ async function renderForPath(reqPath, res, opts = {}) {
       .replace(/(<meta\s+property="og:description"\s+content=")[^"]*(")/, `$1${descEsc}$2`)
       .replace(/(<meta\s+property="og:url"\s+content=")[^"]*(")/, `$1${canonEsc}$2`)
       .replace(/(<meta\s+name="twitter:title"\s+content=")[^"]*(")/, `$1${titleEsc}$2`)
-      .replace(/(<meta\s+name="twitter:description"\s+content=")[^"]*(")/, `$1${descEsc}$2`);
+      .replace(/(<meta\s+name="twitter:description"\s+content=")[^"]*(")/, `$1${descEsc}$2`)
+      // sae:meta-fix — hreflang must name THIS page. index.html hard-codes
+      // the homepage in both alternates and nothing rewrote them, so every
+      // page told Google its Arabic version lived at the site root while its
+      // own canonical said otherwise. The site is Arabic-only, so a
+      // self-reference is both the correct annotation and the reciprocal one.
+      .replace(/(<link\s+rel="alternate"\s+hreflang="ar"\s+href=")[^"]*(")/, `$1${canonEsc}$2`)
+      .replace(/(<link\s+rel="alternate"\s+hreflang="x-default"\s+href=")[^"]*(")/, `$1${canonEsc}$2`);
 
     if (ogImg) {
       html = html
@@ -1483,9 +2040,10 @@ async function renderForPath(reqPath, res, opts = {}) {
     // Until React runs, Googlebot / no-JS users see a fully unique body —
     // this is what fixes the "Alternate page with proper canonical tag" and
     // "Duplicate, Google chose different canonical" issues.
-    if (body) {
-      html = html.replace('<div id="root"></div>', `<div id="root">${body}</div>`);
-    }
+    // sae:rest-fix — the footer goes on every rendered route, not just the
+    // ones that produced a body, so no page is left without site links.
+    const shell = (body || '') + saeFooterHtml(reqPath);
+    html = html.replace('<div id="root"></div>', `<div id="root">${shell}</div>`);
 
     // Per-route structured data: LocalBusiness + BreadcrumbList (services)
     // or ItemList (categories). Inserted just before </body> so the static
@@ -1527,7 +2085,8 @@ router.get('/render', async (req, res) => {
 // SPA catch-all middleware: render the SPA HTML for any GET that no other
 // route matched. Mount via app.use(spaCatchAll) AFTER all API routes.
 async function spaCatchAll(req, res, next) {
-  if (req.method !== 'GET') return next();
+  // sae:head-fix — HEAD renders exactly as GET; Node drops the body itself.
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
   // Skip API and admin paths (admin is a SPA route but blocked from indexing,
   // so we still serve it the homepage HTML — same as before).
   if (req.path.startsWith('/api/')) return next();
@@ -1540,6 +2099,25 @@ async function spaCatchAll(req, res, next) {
   const hasQuery = req.originalUrl && req.originalUrl.includes('?');
   return renderForPath(req.path, res, { forceNoindex: hasQuery });
 }
+
+// sae:image-health — the sweep keeps itself current. There is no cron on this
+// account, and a map of which images were alive last month is worth little.
+// Thirty URLs every twelve hours, three at a time: small enough that it never
+// competes with serving a request.
+imageHealth.startRefresher(async () => {
+  const rows = await Service.findAll({
+    where: { status: 'approved' },
+    attributes: ['image_url'],
+    raw: true,
+  });
+  return [
+    ...new Set(
+      rows
+        .map((r) => r.image_url)
+        .filter((u) => u && String(u).trim().startsWith('http')),
+    ),
+  ];
+}, (msg) => console.log(msg));
 
 module.exports = router;
 module.exports.spaCatchAll = spaCatchAll;
