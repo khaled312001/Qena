@@ -205,6 +205,10 @@
          screen, then jumped out of view when the content arrived (CLS 0.35-0.50 on
          /numbers). main now always fills the screen below the header. -->
     <style>#root main.flex-1{min-height:calc(100vh - 4rem);min-height:calc(100svh - 4rem)}</style>
+    <!-- sae:hero-stats: the home hero's stats row renders only after /api/categories/with-counts
+         returns, growing the hero ~95-125px and pushing the page down (mobile CLS ~0.08).
+         Its exact height is reserved until it exists. -->
+    <style>.lg\:grid-cols-\[1\.35fr\,1fr\]>div:first-child:not(:has(>.grid-cols-3))::after{content:"";display:block;height:95px}@media (min-width:640px){.lg\:grid-cols-\[1\.35fr\,1fr\]>div:first-child:not(:has(>.grid-cols-3))::after{height:120.5px}}@media (min-width:768px){.lg\:grid-cols-\[1\.35fr\,1fr\]>div:first-child:not(:has(>.grid-cols-3))::after{height:124.5px}}</style>
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->
